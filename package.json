@@ -1,0 +1,50 @@
+{
+  "name": "request-nomor-surat-sjp",
+  "version": "1.0.0",
+  "description": "Aplikasi web untuk request nomor surat dengan integrasi Google Sheets",
+  "main": "index.js",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "serve": "python -m http.server 3000",
+    "test": "echo \"No tests configured yet\""
+  },
+  "keywords": [
+    "nomor-surat",
+    "request",
+    "google-sheets",
+    "form-submission",
+    "sjp-holding"
+  ],
+  "author": "SJP Holding",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/nomor-surat-sjp.git"
+  },
+  "dependencies": {
+    "Note": "Frontend only, no NPM dependencies required",
+    "Google Apps Script": "Deployment for backend"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "files": [
+    "index.html",
+    "style.css",
+    "index.js",
+    "dashboard-admin.html",
+    "Google Apps Script.gs",
+    "README.md",
+    "TECHNICAL_DOCS.md"
+  ],
+  "optionalDependencies": {
+    "python": "For local testing (SimpleHTTPServer)"
+  },
+  "documentation": {
+    "setup": "README.md",
+    "technical": "TECHNICAL_DOCS.md",
+    "configuration": "SETUP.conf"
+  }
+}

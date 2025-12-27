@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aplikasi Request Nomor Surat - SJP</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+      <header class="mobile-header">
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+      </header>
+
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <img
+            src="assets/sjp_default_icon (2).png"
+            alt="SJP Logo"
+            class="sidebar-logo"
+          />
+          <h2>SJP HOLDING</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-item active" data-page="dashboard-page">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">Dashboard</span>
+          </div>
+          <div class="nav-item" data-page="request-page">
+            <span class="nav-icon">📝</span>
+            <span class="nav-text">Pengajuan Surat</span>
+          </div>
+          <div class="nav-item" data-page="sheet-page">
+            <span class="nav-icon">📋</span>
+            <span class="nav-text">Halaman Sheet</span>
+          </div>
+        </nav>
+      </aside>
+
+      <div class="main-wrapper">
+        <div class="page-content">
+          <div id="dashboard-page" class="page-section active">
+            <div class="overview-section">
+              <h2 class="section-title">Dashboard Surat Masuk</h2>
+              <p class="section-subtitle">
+                Total Surat Masuk Berdasarkan Kode Perusahaan
+              </p>
+              <div class="company-stats-grid" id="companyStatsGrid"></div>
+            </div>
+          </div>
+
+          <div id="request-page" class="page-section">
+            <div class="form-card">
+              <h2 class="section-title">Pengajuan Surat</h2>
+              <p class="section-subtitle">
+                Isi form di bawah untuk mengajukan nomor surat
+              </p>
+
+              <form id="formRequest" class="form-container">
+                <div class="form-group">
+                  <label for="kodePerusahaan"
+                    >Kode Perusahaan <span class="required">*</span></label
+                  >
+                  <select id="kodePerusahaan" name="kodePerusahaan" required>
+                    <option value="">-- Pilih Kode Perusahaan --</option>
+                    <option value="SJP">SJP</option>
+                    <option value="SJPRA">SJPRA</option>
+                    <option value="SJK">SJK</option>
+                    <option value="SJE">SJE</option>
+                    <option value="SJR">SJR</option>
+                    <option value="SAS">SAS</option>
+                    <option value="PAS">PAS</option>
+                    <option value="SPEK">SPEK</option>
+                    <option value="SKORD">SKORD</option>
+                    <option value="BTJ">BTJ</option>
+                    <option value="PTU">PTU</option>
+                    <option value="RBJ">RBJ</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="kodeTujuan"
+                    >Kode Tujuan <span class="required">*</span></label
+                  >
+                  <input
+                    type="text"
+                    id="kodeTujuan"
+                    name="kodeTujuan"
+                    required
+                    placeholder="Contoh: IJTM"
+                  />
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="bulan"
+                      >Bulan Romawi <span class="required">*</span></label
+                    >
+                    <select id="bulan" name="bulan" required>
+                      <option value="">-- Pilih Bulan --</option>
+                      <option value="I">I - Januari</option>
+                      <option value="II">II - Februari</option>
+                      <option value="III">III - Maret</option>
+                      <option value="IV">IV - April</option>
+                      <option value="V">V - Mei</option>
+                      <option value="VI">VI - Juni</option>
+                      <option value="VII">VII - Juli</option>
+                      <option value="VIII">VIII - Agustus</option>
+                      <option value="IX">IX - September</option>
+                      <option value="X">X - Oktober</option>
+                      <option value="XI">XI - November</option>
+                      <option value="XII">XII - Desember</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="tahun"
+                      >Tahun <span class="required">*</span></label
+                    >
+                    <select id="tahun" name="tahun" required>
+                      <option value="2024">2024</option>
+                      <option value="2025" selected>2025</option>
+                      <option value="2026">2026</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="perihal"
+                    >Perihal <span class="required">*</span></label
+                  >
+                  <input
+                    type="text"
+                    id="perihal"
+                    name="perihal"
+                    required
+                    placeholder="Deskripsi singkat perihal surat"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="tujuan"
+                    >Tujuan <span class="required">*</span></label
+                  >
+                  <textarea
+                    id="tujuan"
+                    name="tujuan"
+                    required
+                    placeholder="Jelaskan tujuan penggunaan surat"
+                    rows="3"
+                  ></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="letakArsip">Letak Arsip</label>
+                  <input
+                    type="text"
+                    id="letakArsip"
+                    name="letakArsip"
+                    placeholder="Lokasi penyimpanan dokumen"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="requestor"
+                    >Requestor <span class="required">*</span></label
+                  >
+                  <input
+                    type="text"
+                    id="requestor"
+                    name="requestor"
+                    required
+                    placeholder="Nama Anda"
+                  />
+                </div>
+
+                <div class="button-group">
+                  <button type="submit" class="btn btn-submit" id="submitBtn">
+                    <span id="btnText">Ajukan Pengajuan</span>
+                    <span id="spinner" class="spinner hidden"></span>
+                  </button>
+                  <button type="reset" class="btn btn-reset">
+                    Bersihkan Form
+                  </button>
+                </div>
+              </form>
+
+              <div id="alertBox" class="alert hidden"></div>
+            </div>
+          </div>
+
+          <div id="sheet-page" class="page-section">
+            <div class="form-card">
+              <h2 class="section-title">Halaman Sheet</h2>
+              <p class="section-subtitle">Semua Pengajuan Surat yang Masuk</p>
+              
+              <div class="sheet-container">
+                <iframe
+                  src="https://docs.google.com/spreadsheets/d/15HvoRQMHRC_JhQadvD3IyE06e1sc7enLkAsO5yBrJs4/edit?usp=sharing&rm=minimal"
+                  style="
+                    border: 1px solid #ddd;
+                    width: 100%;
+                    height: 600px;
+                    border-radius: 8px;
+                  "
+                  title="Google Sheets Semua Pengajuan"
+                  allowfullscreen
+                >
+                </iframe>
+              </div>
+
+              <div class="sheet-fallback">
+                <p class="fallback-text">
+                  <strong>Catatan:</strong> Jika sheet tidak muncul di atas, silahkan buka langsung melalui link di bawah:
+                </p>
+                <a 
+                  href="https://docs.google.com/spreadsheets/d/15HvoRQMHRC_JhQadvD3IyE06e1sc7enLkAsO5yBrJs4/edit?usp=sharing" 
+                  target="_blank" 
+                  class="btn-open-sheets-alt"
+                >
+                  <span class="btn-icon">🔗</span>
+                  Buka Google Sheets di Tab Baru
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>
+            &copy; 2025 Sistem Request Nomor Surat - SJP Holding. All rights
+            reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="index.js"></script>
+  </body>
+</html>
