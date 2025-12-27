@@ -2,7 +2,7 @@
 // Konfigurasi
 // ============================================
 const GOOGLE_APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbx85kx4_veeIPeJeFvF8apF-zKOzntCw-tX0vZotwdOR-F3FoT7M6B20zjK9z8D4lgd/exec";
+  "https://script.google.com/macros/s/AKfycbzesgJtZE9aHCzvc9wDShCLrJeIHNcUl9-JUmVEHMByzS7krqAwnmNibb-hp0RL4yXX/exec";
 
 // ============================================
 // Initialize
@@ -112,7 +112,7 @@ function showPage(pageId) {
 // ============================================
 // Generate Company Statistics
 // ============================================
-function generateCompanyStats() {
+async function generateCompanyStats() {
   const companies = [
     "SJP",
     "SJPRA",
@@ -131,24 +131,54 @@ function generateCompanyStats() {
 
   if (!gridContainer) return;
 
-  gridContainer.innerHTML = "";
+  // Show loading state
+  gridContainer.innerHTML =
+    '<div class="loading-stats">⏳ Memuat data dari spreadsheet...</div>';
 
-  companies.forEach((code) => {
-    const count = getCompanyRequestCount(code);
-    const card = document.createElement("div");
-    card.className = "stat-card company-card";
-    card.innerHTML = `
-            <div class="company-code">${code}</div>
-            <div class="company-count">${count}</div>
-            <div class="company-label">Surat</div>
-        `;
-    gridContainer.appendChild(card);
-  });
+  try {
+    // Fetch real data from spreadsheet
+    const stats = await fetchCompanyStats();
+
+    gridContainer.innerHTML = "";
+
+    companies.forEach((code) => {
+      const count = stats[code] || 0;
+      const card = document.createElement("div");
+      card.className = "stat-card company-card";
+      card.innerHTML = `
+              <div class="company-code">${code}</div>
+              <div class="company-count">${count}</div>
+              <div class="company-label">Surat</div>
+          `;
+      gridContainer.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Error loading stats:", error);
+    gridContainer.innerHTML =
+      '<div class="error-stats">❌ Gagal memuat data. <button onclick="generateCompanyStats()">Coba Lagi</button></div>';
+  }
 }
 
-function getCompanyRequestCount(code) {
-  const requests = JSON.parse(localStorage.getItem("requests") || "[]");
-  return requests.filter((req) => req.kodePerusahaan === code).length;
+// Fetch company statistics from Google Sheets
+async function fetchCompanyStats() {
+  try {
+    const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getStats&t=${Date.now()}`;
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-cache",
+    });
+
+    const result = await response.json();
+
+    if (result.status === "success") {
+      return result.data;
+    } else {
+      throw new Error(result.message || "Gagal mengambil data");
+    }
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    throw error;
+  }
 }
 
 // ============================================
