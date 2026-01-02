@@ -113,6 +113,7 @@ function showPage(pageId) {
 // Generate Company Statistics
 // ============================================
 async function generateCompanyStats() {
+  // UPDATE: Penambahan CSI ke dalam list companies
   const companies = [
     "SJP",
     "SJPRA",
@@ -126,6 +127,7 @@ async function generateCompanyStats() {
     "BTJ",
     "PTU",
     "RBJ",
+    "CSI",
   ];
   const gridContainer = document.getElementById("companyStatsGrid");
 
