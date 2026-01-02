@@ -1,1 +1,3 @@
-Ini adalah Readme.md
+Aplikasi Nomor Surat HR 
+
+Copyright - Team IT @SJP
