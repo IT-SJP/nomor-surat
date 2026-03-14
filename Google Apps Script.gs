@@ -53,7 +53,7 @@ function doGet(e) {
         JSON.stringify({
           status: "success",
           data: stats,
-        })
+        }),
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -62,14 +62,14 @@ function doGet(e) {
       JSON.stringify({
         status: "error",
         message: "Invalid action",
-      })
+      }),
     ).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
     return ContentService.createTextOutput(
       JSON.stringify({
         status: "error",
         message: "Error: " + error.toString(),
-      })
+      }),
     ).setMimeType(ContentService.MimeType.JSON);
   }
 }
@@ -87,7 +87,7 @@ function doPost(e) {
         JSON.stringify({
           status: "error",
           message: "Data tidak valid",
-        })
+        }),
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -95,7 +95,7 @@ function doPost(e) {
     const nomorSurat = generateNomorSurat(
       data.kodePerusahaan,
       data.bulan,
-      data.tahun
+      data.tahun,
     );
 
     // Tambah nomor surat ke data
@@ -109,14 +109,14 @@ function doPost(e) {
         status: "success",
         message: "Data berhasil disimpan",
         nomorSurat: nomorSurat,
-      })
+      }),
     ).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
     return ContentService.createTextOutput(
       JSON.stringify({
         status: "error",
         message: "Error: " + error.toString(),
-      })
+      }),
     ).setMimeType(ContentService.MimeType.JSON);
   }
 }
@@ -298,7 +298,7 @@ function sendConfirmationEmail(data, nomorSurat) {
                                 <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Waktu Request</td>
                                 <td style="padding: 10px; border: 1px solid #ddd;">${new Date().toLocaleString(
                                   "id-ID",
-                                  { timeZone: "Asia/Jakarta" }
+                                  { timeZone: "Asia/Jakarta" },
                                 )}</td>
                             </tr>
                         </table>
@@ -453,7 +453,7 @@ function testSubmission() {
   const nomorSurat = generateNomorSurat(
     testData.kodePerusahaan,
     testData.bulan,
-    testData.tahun
+    testData.tahun,
   );
 
   testData.nomorSurat = nomorSurat;
