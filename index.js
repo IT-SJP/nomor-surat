@@ -2,7 +2,7 @@
 // Konfigurasi
 // ============================================
 const GOOGLE_APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzesgJtZE9aHCzvc9wDShCLrJeIHNcUl9-JUmVEHMByzS7krqAwnmNibb-hp0RL4yXX/exec";
+  "https://script.google.com/macros/s/AKfycbzesgJtZE9aHCzvc9wDShCLrJeIHNcUl9-JUmVEHMByzS7krqAwnmNibb-hp0RL4yXX/exec"; // PASTIIN URL INI HASIL DEPLOY "ANYONE"
 
 // ============================================
 // Initialize
@@ -113,7 +113,6 @@ function showPage(pageId) {
 // Generate Company Statistics
 // ============================================
 async function generateCompanyStats() {
-  // UPDATE: Penambahan CSI ke dalam list companies
   const companies = [
     "SJP",
     "SJPRA",
@@ -157,7 +156,7 @@ async function generateCompanyStats() {
   } catch (error) {
     console.error("Error loading stats:", error);
     gridContainer.innerHTML =
-      '<div class="error-stats">❌ Gagal memuat data. <button onclick="generateCompanyStats()">Coba Lagi</button></div>';
+      '<div class="error-stats">❌ Gagal memuat data. Pastikan URL Script benar. <button onclick="generateCompanyStats()">Coba Lagi</button></div>';
   }
 }
 
@@ -168,6 +167,7 @@ async function fetchCompanyStats() {
     const response = await fetch(url, {
       method: "GET",
       cache: "no-cache",
+      redirect: "follow", // <--- FIX UTAMA: Mencegah error CORS
     });
 
     const result = await response.json();
@@ -295,7 +295,7 @@ async function handleFormSubmit(e) {
     console.error("Error:", error);
     showAlert(
       "✗ Terjadi kesalahan saat mengirim form. Silahkan coba lagi.",
-      "error"
+      "error",
     );
   } finally {
     // Enable button
