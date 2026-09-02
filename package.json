@@ -1,50 +1,26 @@
 {
-  "name": "request-nomor-surat-sjp",
-  "version": "1.0.0",
-  "description": "Aplikasi web untuk request nomor surat dengan integrasi Google Sheets",
-  "main": "index.js",
-  "scripts": {
-    "start": "python -m http.server 8000",
-    "serve": "python -m http.server 3000",
-    "test": "echo \"No tests configured yet\""
-  },
-  "keywords": [
-    "nomor-surat",
-    "request",
-    "google-sheets",
-    "form-submission",
-    "sjp-holding"
-  ],
-  "author": "SJP Holding",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/nomor-surat-sjp.git"
-  },
-  "dependencies": {
-    "Note": "Frontend only, no NPM dependencies required",
-    "Google Apps Script": "Deployment for backend"
-  },
-  "devDependencies": {},
-  "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.0.0"
-  },
-  "files": [
-    "index.html",
-    "style.css",
-    "index.js",
-    "dashboard-admin.html",
-    "Google Apps Script.gs",
-    "README.md",
-    "TECHNICAL_DOCS.md"
-  ],
-  "optionalDependencies": {
-    "python": "For local testing (SimpleHTTPServer)"
-  },
-  "documentation": {
-    "setup": "README.md",
-    "technical": "TECHNICAL_DOCS.md",
-    "configuration": "SETUP.conf"
-  }
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vp build",
+        "dev": "vp dev"
+    },
+    "dependencies": {
+        "@tailwindcss/vite": "^4.1.11",
+        "concurrently": "^10.0.3",
+        "laravel-vite-plugin": "^3.1",
+        "tailwindcss": "^4.0.7",
+        "vite": "^8.0.0",
+        "vite-plus": "0.3.0"
+    },
+    "optionalDependencies": {
+        "@laravel/multiplex": "^0.4.1",
+        "@rollup/rollup-linux-x64-gnu": "4.9.5",
+        "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
+        "lightningcss-linux-x64-gnu": "^1.29.1"
+    },
+    "devDependencies": {
+        "daisyui": "^5.7.23"
+    }
 }
