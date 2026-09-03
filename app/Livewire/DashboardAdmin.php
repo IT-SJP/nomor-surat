@@ -12,7 +12,7 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Dashboard Statistik Surat')]
-class DashboardStats extends Component
+class DashboardAdmin extends Component
 {
     public function mount(): void
     {
@@ -39,7 +39,7 @@ class DashboardStats extends Component
             ->limit(8)
             ->get();
 
-        return view('livewire.dashboard-stats', [
+        return view('livewire.dashboard-admin', [
             'branches' => $branches,
             'branchStats' => $branchStats,
             'totalLetters' => $totalLetters,

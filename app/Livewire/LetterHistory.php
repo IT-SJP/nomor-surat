@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Models\Absen\Cabang;
 use App\Models\Letter;
-use App\Services\LetterNumberService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
@@ -26,6 +25,8 @@ class LetterHistory extends Component
 
     public string $userBranch = 'SJP';
 
+    public string $userBranchName = 'PT Selamat Jaya Persada';
+
     #[Url]
     public string $search = '';
 
@@ -33,10 +34,7 @@ class LetterHistory extends Component
     public string $branch = '';
 
     #[Url]
-    public string $year = '';
-
-    #[Url]
-    public string $month = '';
+    public string $date = '';
 
     public int $perPage = 15;
 
@@ -50,6 +48,7 @@ class LetterHistory extends Component
         $this->isKaryawan = ($sso['role'] ?? '') === 'karyawan';
         $this->isAdmin = ($sso['role'] ?? '') === 'admin';
         $this->userBranch = $sso['branch_code'] ?? 'SJP';
+        $this->userBranchName = $sso['branch_name'] ?? ($sso['branch_code'] ?? 'PT Selamat Jaya Persada');
 
         if ($this->isKaryawan) {
             // Strictly enforce and lock to Karyawan's branch
@@ -70,25 +69,26 @@ class LetterHistory extends Component
         $this->resetPage();
     }
 
-    public function updatedYear(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedMonth(): void
+    public function updatedDate(): void
     {
         $this->resetPage();
     }
 
     public function resetFilters(): void
     {
-        $this->reset(['search', 'year', 'month']);
+        $this->reset(['search', 'date']);
         if ($this->isAdmin) {
             $this->reset('branch');
         } else {
             $this->branch = $this->userBranch;
         }
         $this->resetPage();
+
+        $this->dispatch('toast', [
+            'type' => 'info',
+            'title' => 'Filter Direset',
+            'message' => 'Parameter pencarian telah dikembalikan ke semula.',
+        ]);
     }
 
     public function viewLetter(int $id): void
@@ -117,10 +117,7 @@ class LetterHistory extends Component
         $letters = Letter::query()
             ->search($this->search)
             ->branch($effectiveBranch)
-            ->period(
-                $this->year ? (int) $this->year : null,
-                $this->month ? (int) $this->month : null
-            )
+            ->date($this->date)
             ->latest('id')
             ->get();
 
@@ -148,7 +145,6 @@ class LetterHistory extends Component
                 'Tujuan',
                 'Letak Arsip',
                 'Nama Requestor',
-                'NIK Requestor',
                 'Email',
                 'No Telepon',
                 'Waktu Input',
@@ -166,7 +162,6 @@ class LetterHistory extends Component
                     $item->purpose,
                     $item->archive_location ?? '-',
                     $item->requestor_name,
-                    $item->requestor_nik ?? '-',
                     $item->requestor_email ?? '-',
                     $item->requestor_phone ?? '-',
                     $item->created_at->format('d/m/Y H:i'),
@@ -187,17 +182,14 @@ class LetterHistory extends Component
         $letters = Letter::query()
             ->search($this->search)
             ->branch($effectiveBranch)
-            ->period(
-                $this->year ? (int) $this->year : null,
-                $this->month ? (int) $this->month : null
-            )
+            ->date($this->date)
             ->latest('id')
             ->paginate($this->perPage);
 
         return view('livewire.letter-history', [
             'letters' => $letters,
             'branches' => $branches,
-            'romanMonths' => LetterNumberService::ROMAN_MONTHS,
+            'userBranchName' => $this->userBranchName,
         ]);
     }
 }

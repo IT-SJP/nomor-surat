@@ -21,6 +21,7 @@ yarn-debug.log*
 /storage/*.key
 /storage/pail
 /public/hot
+/public/build
 /public/storage
 /public/fonts-manifest.dev.json
 
@@ -33,6 +34,8 @@ yarn-debug.log*
 !/storage/framework/views/.gitignore
 /storage/logs/*
 !/storage/logs/.gitignore
+/storage/*.key
+/storage/pail
 
 # Testing & Linters
 /.phpunit.cache

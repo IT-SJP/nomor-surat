@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Absen\Cabang;
+use App\Models\Absen\Karyawan;
 use App\Models\Branch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 class SsoAuthController extends Controller
 {
@@ -53,26 +56,85 @@ class SsoAuthController extends Controller
             ], 403);
         }
 
-        // Resolve or auto-create branch in local database
+        // 1. Identifikasi kode unik cabang asli dari data Absenku SJP (absen_db.cabang)
         $rawBranchCode = (string) ($payload['raw_branch_code'] ?? $payload['branch_code'] ?? '');
-        $localBranch = null;
-        if (! empty($rawBranchCode)) {
-            $localBranch = Branch::where('hr_code', $rawBranchCode)
-                ->orWhere('branch_code', $rawBranchCode)
-                ->first();
+        $hrisCabang = null;
 
-            if (! $localBranch) {
+        try {
+            // Cocokkan langsung ke kode_cabang HRIS
+            if (! empty($rawBranchCode)) {
+                $hrisCabang = Cabang::where('kode_cabang', $rawBranchCode)->first();
+            }
+
+            // Jika belum ditemukan (misal alias 'SJP' atau kode_cabang kosong pada admin)
+            if (! $hrisCabang) {
+                $branchNameHint = (string) ($payload['branch_name'] ?? '');
+                if (strtoupper($rawBranchCode) === 'SJP' || str_contains(strtoupper($branchNameHint), 'SELAMAT JAYA PERSADA')) {
+                    $hrisCabang = Cabang::where('kode_cabang', 'CBNG0001')
+                        ->orWhere('nama_cabang', 'ILIKE', '%SELAMAT JAYA PERSADA%')
+                        ->first();
+                } elseif (! empty($rawBranchCode)) {
+                    $hrisCabang = Cabang::where('nama_cabang', 'ILIKE', '%'.$rawBranchCode.'%')->first();
+                }
+            }
+
+            // Fallback default untuk admin jika masih belum terpetakan
+            if (! $hrisCabang && ($payload['role'] ?? '') === 'admin') {
+                $hrisCabang = Cabang::where('kode_cabang', 'CBNG0001')->first();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal query cabang absen_db: '.$e->getMessage());
+        }
+
+        // Tentukan kode HRIS resmi dan nama cabang resmi
+        $officialHrCode = $hrisCabang?->kode_cabang ?? (! empty($rawBranchCode) ? $rawBranchCode : 'CBNG0001');
+        $officialBranchName = $hrisCabang?->nama_cabang ?? ($payload['branch_name'] ?? "Cabang {$officialHrCode}");
+
+        // 2. Cari atau daftarkan ke tabel lokal branches agar tidak ada duplikasi data
+        $localBranch = Branch::where('hr_code', $officialHrCode)->first();
+
+        if (! $localBranch) {
+            // Cek apakah ada record cabang dengan nama yang sama persis
+            $localBranch = Branch::where('name', $officialBranchName)->first();
+
+            if ($localBranch) {
+                $localBranch->update([
+                    'hr_code' => $officialHrCode,
+                    'name' => $officialBranchName,
+                ]);
+            } else {
+                $initialBranchCode = $payload['branch_code'] ?? null;
+                if ($initialBranchCode && Branch::where('branch_code', $initialBranchCode)->exists()) {
+                    $initialBranchCode = null;
+                }
+
                 $localBranch = Branch::create([
-                    'hr_code' => $rawBranchCode,
-                    'branch_code' => $payload['branch_code'] ?? null,
-                    'name' => $payload['branch_name'] ?? "Cabang {$rawBranchCode}",
-                    'is_active' => true,
+                    'hr_code' => $officialHrCode,
+                    'branch_code' => $initialBranchCode,
+                    'name' => $officialBranchName,
+                    'is_active' => (bool) ($hrisCabang?->status ?? true),
                 ]);
             }
         }
 
-        $effectiveBranchCode = $localBranch?->branch_code ?? $payload['branch_code'] ?? null;
-        $effectiveBranchName = $localBranch?->name ?? $payload['branch_name'] ?? 'PT SJP Group';
+        $effectiveBranchCode = $localBranch->branch_code ?? $payload['branch_code'] ?? null;
+        $effectiveBranchName = $localBranch->name;
+
+        $email = $payload['email'] ?? null;
+        $phone = $payload['phone'] ?? $payload['no_hp'] ?? null;
+
+        // Jika email atau nomor telepon belum terisi tapi terdapat NIK karyawan, sinkronkan dari database Absenku SJP
+        if ((empty($email) || empty($phone)) && ! empty($payload['nik'])) {
+            try {
+                $karyawanRecord = Karyawan::where('nik', $payload['nik'])->first();
+                if ($karyawanRecord) {
+                    $email = $email ?: $karyawanRecord->email;
+                    $phone = $phone ?: $karyawanRecord->no_hp;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Gagal sinkron data kontak karyawan dari absen_db: '.$e->getMessage());
+            }
+        }
 
         // Store authenticated SSO profile in session
         session([
@@ -81,9 +143,10 @@ class SsoAuthController extends Controller
                 'role' => $payload['role'], // 'admin' | 'karyawan'
                 'nik' => $payload['nik'] ?? null,
                 'name' => $payload['name'] ?? 'Pengguna Absenku',
-                'email' => $payload['email'] ?? null,
+                'email' => $email,
+                'phone' => $phone,
                 'branch_code' => $effectiveBranchCode,
-                'raw_branch_code' => $rawBranchCode,
+                'raw_branch_code' => $officialHrCode,
                 'branch_name' => $effectiveBranchName,
                 'department_name' => $payload['department_name'] ?? 'SJP Group',
                 'position_name' => $payload['position_name'] ?? 'Karyawan',

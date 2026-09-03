@@ -2,6 +2,7 @@
 
 use App\Livewire\BranchManagement;
 use App\Models\Branch;
+use App\Models\Letter;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -62,4 +63,48 @@ test('can update branch code via livewire component', function () {
         ->assertHasNoErrors();
 
     expect($branch->fresh()->branch_code)->toBe('NEW_XYZ');
+});
+
+test('can delete branch via livewire component when no letters exist', function () {
+    $branch = Branch::create([
+        'hr_code' => 'DEL01',
+        'branch_code' => 'DEL01',
+        'name' => 'Cabang Dihapus',
+        'is_active' => true,
+    ]);
+
+    Livewire::test(BranchManagement::class)
+        ->call('deleteBranch', $branch->id)
+        ->assertDispatched('toast');
+
+    expect(Branch::find($branch->id))->toBeNull();
+});
+
+test('cannot delete branch when letters exist', function () {
+    $branch = Branch::create([
+        'hr_code' => 'DEL02',
+        'branch_code' => 'DEL02',
+        'name' => 'Cabang Ada Surat',
+        'is_active' => true,
+    ]);
+
+    Letter::create([
+        'reference_number' => 'DEL02/IX/2026/001',
+        'sequence_number' => 1,
+        'branch_code' => 'DEL02',
+        'branch_name' => 'Cabang Ada Surat',
+        'target_code' => 'INSTANSI',
+        'month_roman' => 'IX',
+        'month' => 9,
+        'year' => 2026,
+        'subject' => 'Surat Uji',
+        'purpose' => 'Pengujian',
+        'requestor_name' => 'Tester',
+    ]);
+
+    Livewire::test(BranchManagement::class)
+        ->call('deleteBranch', $branch->id)
+        ->assertDispatched('toast');
+
+    expect(Branch::find($branch->id))->not->toBeNull();
 });

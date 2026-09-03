@@ -12,7 +12,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ isset($title) ? $title . ' — ' : '' }}Sistem Nomor Surat | SJP Holding</title>
+    <title>{{ isset($title) ? $title . ' — ' : '' }} Sistem Nomor Surat | SJP Holding</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
@@ -52,59 +52,47 @@
             <!-- Navigation Links -->
             <nav class="space-y-1.5 flex-1 px-1">
                 @if($isAdmin)
-                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-primary-600' }} group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg transition-all duration-200">
+                    <a href="{{ route('dashboard') }}" wire:navigate class="{{ request()->routeIs('dashboard') ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-primary-600' }} group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg transition-all duration-200">
                         <svg class="mr-3 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                         <span>Dashboard</span>
                     </a>
-
-                    <a href="{{ route('branch.management') }}" class="{{ request()->routeIs('branch.management') ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-primary-600' }} group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg transition-all duration-200">
-                        <svg class="mr-3 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                        <span>Pengaturan Cabang</span>
-                    </a>
                 @endif
 
-                <a href="{{ route('letter.request') }}" class="{{ request()->routeIs('letter.request') ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-primary-600' }} group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg transition-all duration-200">
+                <a href="{{ route('letter.request') }}" wire:navigate class="{{ request()->routeIs('letter.request') ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-primary-600' }} group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg transition-all duration-200">
                     <svg class="mr-3 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
                     <span>Buat Nomor Surat</span>
                 </a>
 
-                <a href="{{ route('letter.history') }}" class="{{ request()->routeIs('letter.history') ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-primary-600' }} group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg transition-all duration-200">
+                <a href="{{ route('letter.history') }}" wire:navigate class="{{ request()->routeIs('letter.history') ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-primary-600' }} group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg transition-all duration-200">
                     <svg class="mr-3 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <span>{{ $isAdmin ? 'Riwayat Semua Surat' : "Riwayat ({$userBranch})" }}</span>
+                    <span>Riwayat Nomor Surat</span>
                 </a>
+
+                @if ($isAdmin)
+                    <a href="{{ route('branch.management') }}" wire:navigate class="{{ request()->routeIs('branch.management') ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-primary-600' }} group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg transition-all duration-200">
+                        <svg class="mr-3 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        <span>Pengaturan Cabang</span>
+                    </a>
+                @endif
             </nav>
         </div>
 
-        <!-- Bottom User Card -->
-        <div class="flex-shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 mt-3">
-            <div class="flex items-center justify-between min-w-0">
-                <div class="flex items-center min-w-0 flex-1">
-                    <div class="avatar shrink-0">
-                        <div class="w-9 h-9 rounded-lg bg-primary-50 border border-primary-200 flex items-center justify-center text-primary-700 font-extrabold uppercase text-xs shadow-2xs">
-                            {{ strtoupper(substr($userName, 0, 2)) }}
-                        </div>
-                    </div>
-                    <div class="ml-2.5 min-w-0 flex-1">
-                        <p class="text-xs font-bold text-slate-900 truncate" title="{{ $userName }}">{{ $userName }}</p>
-                        <p class="text-[10px] font-medium text-slate-500 truncate">
-                            {{ $userDept ?: ($isAdmin ? 'Administrator' : 'Karyawan') }} &bull; {{ $userBranch }}
-                        </p>
-                    </div>
-                </div>
-                <a href="{{ route('sso.logout') }}" class="btn btn-ghost btn-circle btn-sm text-slate-400 hover:text-rose-600 transition-colors shrink-0" title="Kembali ke Absenku">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                </a>
-            </div>
+        <!-- Bottom Section: Kembali ke Absenku -->
+        <div class="pt-3 border-t border-slate-200 px-1 shrink-0 mt-3">
+            <a href="{{ route('sso.logout') }}" class="group flex items-center px-3.5 py-2.5 text-sm font-bold rounded-lg text-white bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/20 active:scale-[0.98] transition-all duration-200">
+                <svg class="mr-3 h-5 w-5 shrink-0 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                <span>Kembali Absenku SJP</span>
+            </a>
         </div>
     </aside>
 
@@ -113,18 +101,12 @@
     <!-- ========================================== -->
     <header class="lg:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-2.5 sticky top-0 z-40 shadow-xs">
         <div class="flex items-center gap-2.5">
-            <img src="{{ asset('assets/SJP Holding.png') }}" alt="SJP Holding" class="h-7 w-auto object-contain">
-            <span class="badge badge-primary badge-soft badge-xs font-mono font-bold">{{ $userBranch }}</span>
+            <img src="{{ asset('assets/img/sjp_horizontal.png') }}" alt="SJP Holding" class="h-7 w-auto object-contain">
         </div>
 
         <div class="flex items-center gap-2">
-            <div class="avatar placeholder">
-                <div class="bg-primary-50 border border-primary-200 text-primary-700 rounded-lg w-7 h-7 text-[10px] font-extrabold flex items-center justify-center shadow-2xs">
-                    <span>{{ strtoupper(substr($userName, 0, 2)) }}</span>
-                </div>
-            </div>
-            <a href="{{ route('sso.logout') }}" class="btn btn-ghost btn-circle btn-xs text-slate-400 hover:text-rose-600" title="Keluar">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{{ route('sso.logout') }}" class="btn btn-ghost btn-square btn-sm rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Kembali Absenku SJP">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                 </svg>
             </a>
@@ -134,8 +116,8 @@
     <!-- ========================================== -->
     <!-- 3. MAIN CONTENT CONTAINER                  -->
     <!-- ========================================== -->
-    <div class="flex-1 flex flex-col min-h-screen overflow-x-hidden">
-        <main class="flex-1 relative z-0 overflow-y-auto focus:outline-none p-4 sm:p-6 md:p-8 lg:p-10 pb-28 lg:pb-10">
+    <div class="flex-1 flex flex-col min-h-screen">
+        <main class="flex-1 focus:outline-none p-4 sm:p-6 md:p-8 lg:p-10 pb-28 lg:pb-10">
             @if (session('status'))
                 <div class="alert alert-success alert-soft mb-6 rounded-2xl border border-emerald-200/80 p-4 shadow-xs flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
                     <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,6 +125,35 @@
                     </svg>
                     <span class="font-bold text-sm text-emerald-900">{{ session('status') }}</span>
                 </div>
+                <script>
+                    (function() {
+                        const showMsg = () => { if (window.showToast) window.showToast('success', @json(session('status'))); };
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', showMsg, { once: true });
+                        } else {
+                            setTimeout(showMsg, 100);
+                        }
+                    })();
+                </script>
+            @endif
+
+            @if (session('error'))
+                <div class="alert alert-error alert-soft mb-6 rounded-2xl border border-red-200/80 p-4 shadow-xs flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-bold text-sm text-red-900">{{ session('error') }}</span>
+                </div>
+                <script>
+                    (function() {
+                        const showMsg = () => { if (window.showToast) window.showToast('error', @json(session('error'))); };
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', showMsg, { once: true });
+                        } else {
+                            setTimeout(showMsg, 100);
+                        }
+                    })();
+                </script>
             @endif
 
             {{ $slot }}
@@ -154,40 +165,36 @@
     <!-- ========================================== -->
     <nav class="lg:hidden dock dock-bottom fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-2xl py-1 px-2 safe-area-pb">
         @if($isAdmin)
-            <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'dock-active text-primary-600 font-bold' : 'text-slate-400' }} flex flex-col items-center py-1 transition-colors">
+            <a href="{{ route('dashboard') }}" wire:navigate class="{{ request()->routeIs('dashboard') ? 'dock-active text-primary-600 font-bold' : 'text-slate-400' }} flex flex-col items-center py-1 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
                 <span class="dock-label text-[10px] mt-0.5 font-medium">Dashboard</span>
             </a>
-            <a href="{{ route('branch.management') }}" class="{{ request()->routeIs('branch.management') ? 'dock-active text-primary-600 font-bold' : 'text-slate-400' }} flex flex-col items-center py-1 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span class="dock-label text-[10px] mt-0.5 font-medium">Cabang</span>
-            </a>
         @endif
 
-        <a href="{{ route('letter.request') }}" class="{{ request()->routeIs('letter.request') ? 'dock-active text-primary-600 font-bold' : 'text-slate-400' }} flex flex-col items-center py-1 transition-colors">
+        <a href="{{ route('letter.request') }}" wire:navigate class="{{ request()->routeIs('letter.request') ? 'dock-active text-primary-600 font-bold' : 'text-slate-400' }} flex flex-col items-center py-1 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            <span class="dock-label text-[10px] mt-0.5 font-medium">Buat Nomor</span>
+            <span class="dock-label text-[10px] mt-0.5 font-medium">Nomor Surat</span>
         </a>
 
-        <a href="{{ route('letter.history') }}" class="{{ request()->routeIs('letter.history') ? 'dock-active text-primary-600 font-bold' : 'text-slate-400' }} flex flex-col items-center py-1 transition-colors">
+        <a href="{{ route('letter.history') }}" wire:navigate class="{{ request()->routeIs('letter.history') ? 'dock-active text-primary-600 font-bold' : 'text-slate-400' }} flex flex-col items-center py-1 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <span class="dock-label text-[10px] mt-0.5 font-medium">Riwayat</span>
         </a>
 
-        <a href="{{ route('sso.logout') }}" class="text-slate-400 flex flex-col items-center py-1 hover:text-rose-600 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span class="dock-label text-[10px] mt-0.5 font-medium">Absenku</span>
-        </a>
+        @if ($isAdmin)
+            <a href="{{ route('branch.management') }}" wire:navigate class="{{ request()->routeIs('branch.management') ? 'dock-active text-primary-600 font-bold' : 'text-slate-400' }} flex flex-col items-center py-1 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span class="dock-label text-[10px] mt-0.5 font-medium">Cabang</span>
+            </a>
+        @endif
     </nav>
 
     <!-- ========================================== -->

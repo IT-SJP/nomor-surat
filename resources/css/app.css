@@ -84,3 +84,32 @@
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(148, 163, 184, 0.6);
 }
+
+/* SweetAlert2 & Toast Custom Polish */
+.sjp-toast-popup {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+div:where(.swal2-container).swal2-top-end > .swal2-popup {
+    margin-top: 1rem !important;
+    margin-right: 1rem !important;
+}
+
+/* Top Livewire loading bar */
+#livewire-nav-progress {
+    box-shadow: 0 0 10px rgba(38, 150, 57, 0.5);
+}
+
+/* Shimmer pulse for table / preview loading */
+@keyframes sjp-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.animate-sjp-pulse {
+    animation: sjp-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+

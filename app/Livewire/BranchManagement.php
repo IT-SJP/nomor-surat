@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Branch;
+use App\Models\Letter;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -23,16 +24,25 @@ class BranchManagement extends Component
         }
     }
 
-    public function toggleActive($branchId): void
+    public function toggleActive(int $branchId): void
     {
+        /** @var Branch $branch */
         $branch = Branch::findOrFail($branchId);
         $branch->update(['is_active' => ! $branch->is_active]);
 
-        session()->flash('status', 'Status cabang berhasil diperbarui.');
+        $statusText = $branch->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        session()->flash('status', "Status cabang {$branch->name} berhasil {$statusText}.");
+
+        $this->dispatch('toast', [
+            'type' => $branch->is_active ? 'success' : 'warning',
+            'title' => 'Status Cabang',
+            'message' => "Cabang {$branch->name} berhasil {$statusText}.",
+        ]);
     }
 
-    public function updateBranchCode($branchId, $newCode): void
+    public function updateBranchCode(int $branchId, string $newCode): void
     {
+        /** @var Branch $branch */
         $branch = Branch::findOrFail($branchId);
 
         $validated = validator(['code' => $newCode], [
@@ -42,6 +52,44 @@ class BranchManagement extends Component
         $branch->update(['branch_code' => $validated['code']]);
 
         session()->flash('status', 'Kode surat cabang berhasil diperbarui.');
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Kode Surat Diperbarui',
+            'message' => "Kode surat {$branch->name} berhasil diubah menjadi '{$validated['code']}'.",
+        ]);
+    }
+
+    public function deleteBranch(int $branchId): void
+    {
+        /** @var Branch $branch */
+        $branch = Branch::findOrFail($branchId);
+
+        // Validasi apakah cabang sudah memiliki surat keluar yang pernah diterbitkan
+        $lettersCount = Letter::where('branch_code', $branch->branch_code)
+            ->orWhere('branch_code', $branch->hr_code)
+            ->count();
+
+        if ($lettersCount > 0) {
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Tidak Dapat Dihapus',
+                'message' => "Cabang {$branch->name} tidak dapat dihapus karena sudah memiliki {$lettersCount} arsip nomor surat. Silakan nonaktifkan cabang sebagai gantinya.",
+            ]);
+
+            return;
+        }
+
+        $branchName = $branch->name;
+        $branch->delete();
+
+        session()->flash('status', "Cabang {$branchName} berhasil dihapus dari sistem nomor surat.");
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Cabang Dihapus',
+            'message' => "Cabang {$branchName} berhasil dihapus dari sistem nomor surat (data di database Absenku tetap aman).",
+        ]);
     }
 
     public function render(): View

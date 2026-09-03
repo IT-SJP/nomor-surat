@@ -67,8 +67,7 @@ test('validates required fields on letter request form', function () {
 
 test('can lock branch when employee is selected in admin mode', function () {
     $employeeMock = [
-        'id' => 123,
-        'nik' => '2024099',
+        'id' => 'mock-hash-id-123',
         'name' => 'Dewi Sartika',
         'branch_id' => 2,
         'branch_code' => 'CSI',
@@ -85,6 +84,35 @@ test('can lock branch when employee is selected in admin mode', function () {
         ->assertSet('requestor_position', 'Finance Staff')
         ->assertSet('branch_code', 'CSI')
         ->assertSet('isBranchLocked', true);
+});
+
+test('admin can search employees in realtime and select an employee with select2 style without exposing NIK', function () {
+    $component = Livewire::test(LetterRequestForm::class)
+        ->set('employeeSearch', 'Karim')
+        ->assertSet('isKaryawan', false);
+
+    expect($component->get('employeeResults'))->not()->toBeEmpty();
+    expect($component->get('employeeResults')[0]['name'])->toContain('Karim');
+    expect($component->get('employeeResults')[0])->not()->toHaveKey('nik');
+    expect($component->get('employeeResults')[0]['id'])->not()->toBe('1771012501030004');
+
+    $component->assertDontSee('1771012501030004')
+        ->assertDontSee('NIK:');
+
+    $selected = $component->get('employeeResults')[0];
+    $component->call('selectEmployee', $selected)
+        ->assertSet('selectedEmployee', $selected)
+        ->assertSet('requestor_name', $selected['name'])
+        ->assertSet('isEmailLocked', true)
+        ->assertSet('isPhoneLocked', true)
+        ->assertDontSee('1771012501030004')
+        ->assertDontSee('NIK:');
+
+    $component->call('clearSelectedEmployee')
+        ->assertSet('selectedEmployee', null)
+        ->assertSet('requestor_name', '')
+        ->assertSet('isEmailLocked', false)
+        ->assertSet('isPhoneLocked', false);
 });
 
 test('letter history page renders and supports search and filter', function () {
@@ -154,4 +182,83 @@ test('can export letters history to csv', function () {
         ->call('exportCsv');
 
     $response->assertFileDownloaded();
+});
+
+test('can filter letters history by date', function () {
+    $todayLetter = Letter::factory()->create([
+        'reference_number' => 'SJP/IX/2026/001',
+        'subject' => 'Surat Hari Ini',
+        'created_at' => '2026-09-03 10:00:00',
+    ]);
+
+    $pastLetter = Letter::factory()->create([
+        'reference_number' => 'SJP/VIII/2026/002',
+        'subject' => 'Surat Bulan Lalu',
+        'created_at' => '2026-08-15 10:00:00',
+    ]);
+
+    Livewire::test(LetterHistory::class)
+        ->set('date', '2026-09-03')
+        ->assertSee('Surat Hari Ini')
+        ->assertDontSee('Surat Bulan Lalu');
+});
+
+test('letter request form populates requestor email and phone for karyawan from session and locks them', function () {
+    session([
+        'auth_sso' => [
+            'type' => 'karyawan',
+            'role' => 'karyawan',
+            'nik' => '1771012501030004',
+            'name' => 'Muhammad Nurul Karim',
+            'email' => 'mhmdnurulkarim@gmail.com',
+            'phone' => '08516364898199',
+            'branch_code' => 'SJP',
+            'department_name' => 'Information Technology',
+            'position_name' => 'Staff',
+        ],
+    ]);
+
+    Livewire::test(LetterRequestForm::class)
+        ->assertSet('requestor_name', 'Muhammad Nurul Karim')
+        ->assertSet('requestor_department', 'Information Technology')
+        ->assertSet('requestor_position', 'Staff')
+        ->assertSet('requestor_email', 'mhmdnurulkarim@gmail.com')
+        ->assertSet('requestor_phone', '08516364898199')
+        ->assertSet('isEmailLocked', true)
+        ->assertSet('isPhoneLocked', true);
+});
+
+test('letter request form leaves email and phone unlocked for manual edit if employee data is empty', function () {
+    session([
+        'auth_sso' => [
+            'type' => 'karyawan',
+            'role' => 'karyawan',
+            'nik' => '9999999999999999', // non-existent NIK so no DB fallback
+            'name' => 'Karyawan Baru Tanpa Email',
+            'email' => null,
+            'phone' => null,
+            'branch_code' => 'SJP',
+            'department_name' => 'Operasional',
+            'position_name' => 'Staff',
+        ],
+    ]);
+
+    Livewire::test(LetterRequestForm::class)
+        ->assertSet('requestor_name', 'Karyawan Baru Tanpa Email')
+        ->assertSet('requestor_email', '')
+        ->assertSet('requestor_phone', '')
+        ->assertSet('isEmailLocked', false)
+        ->assertSet('isPhoneLocked', false)
+        ->set('requestor_email', 'manual@example.com')
+        ->set('requestor_phone', '08123456789')
+        ->assertSet('requestor_email', 'manual@example.com')
+        ->assertSet('requestor_phone', '08123456789');
+});
+
+test('success modal can be closed via closeSuccessModal and renders close button', function () {
+    Livewire::test(LetterRequestForm::class)
+        ->set('showSuccessModal', true)
+        ->assertSeeHtml('wire:click="closeSuccessModal"')
+        ->call('closeSuccessModal')
+        ->assertSet('showSuccessModal', false);
 });

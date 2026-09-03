@@ -54,6 +54,17 @@ class Karyawan extends Model
     protected $guarded = [];
 
     /**
+     * The attributes that should be hidden for serialization to prevent NIK / sensitive data leakage.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'nik',
+    ];
+
+    /**
      * Branch relationship.
      *
      * @return BelongsTo<Cabang, $this>
@@ -61,6 +72,26 @@ class Karyawan extends Model
     public function cabang(): BelongsTo
     {
         return $this->belongsTo(Cabang::class, 'kode_cabang', 'kode_cabang');
+    }
+
+    /**
+     * Department relationship.
+     *
+     * @return BelongsTo<Departemen, $this>
+     */
+    public function departemen(): BelongsTo
+    {
+        return $this->belongsTo(Departemen::class, 'kode_dept', 'kode_dept');
+    }
+
+    /**
+     * Position relationship.
+     *
+     * @return BelongsTo<Jabatan, $this>
+     */
+    public function jabatanRel(): BelongsTo
+    {
+        return $this->belongsTo(Jabatan::class, 'jabatan_id', 'id');
     }
 
     /**
@@ -84,27 +115,25 @@ class Karyawan extends Model
      *
      * @return Collection<int, array<string, mixed>>
      */
-    public static function searchEmployees(string $keyword, int $limit = 10): Collection
+    public static function searchEmployees(string $keyword = '', int $limit = 10): Collection
     {
-        if (trim($keyword) === '') {
-            return collect();
-        }
-
         try {
             DB::connection('absen_db')->getPdo();
 
             /** @var \Illuminate\Database\Eloquent\Collection<int, self> $query */
             $query = static::query()
                 ->with(['cabang', 'departemen', 'jabatanRel'])
-                ->where(function (Builder $q) use ($keyword) {
-                    $q->where('nik', 'like', "%{$keyword}%")
+                ->where('status_aktif', 'Aktif');
+
+            if (trim($keyword) !== '') {
+                $query->where(function (Builder $q) use ($keyword) {
+                    $q->where('nik', 'ilike', "%{$keyword}%")
                         ->orWhere('nama_lengkap', 'ilike', "%{$keyword}%")
                         ->orWhere('nama_panggilan', 'ilike', "%{$keyword}%");
-                })
-                ->when(
-                    DB::connection('absen_db')->getSchemaBuilder()->hasColumn('karyawan', 'status_aktif'),
-                    fn (Builder $q) => $q->where('status_aktif', 'Aktif')
-                )
+                });
+            }
+
+            $query = $query->orderBy('nama_lengkap', 'asc')
                 ->limit($limit)
                 ->get();
 
@@ -115,9 +144,11 @@ class Karyawan extends Model
                 $branchCode = $localBranch?->branch_code ?? '';
                 $branchName = $localBranch?->name ?? $emp->cabang?->branch_name ?? "Cabang {$rawCode}";
 
+                // Generate safe opaque hash identifier so raw NIK primary key is never exposed
+                $opaqueId = substr(hash_hmac('sha256', (string) $emp->getKey(), (string) config('app.key')), 0, 16);
+
                 return [
-                    'id' => $emp->getKey(),
-                    'nik' => $emp->nik_number,
+                    'id' => $opaqueId,
                     'name' => $emp->full_name,
                     'branch_id' => $rawCode,
                     'branch_code' => $branchCode,

@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\SsoAuthController;
 use App\Livewire\BranchManagement;
-use App\Livewire\DashboardStats;
+use App\Livewire\DashboardAdmin;
 use App\Livewire\LetterHistory;
 use App\Livewire\LetterRequestForm;
 use Illuminate\Support\Facades\Route;
@@ -22,7 +22,7 @@ Route::middleware('absen.auth')->group(function () {
         return redirect()->route('dashboard');
     })->name('home');
 
-    Route::get('/dashboard', DashboardStats::class)->name('dashboard');
+    Route::get('/dashboard', DashboardAdmin::class)->name('dashboard');
     Route::get('/branches', BranchManagement::class)->name('branch.management');
     Route::get('/request', LetterRequestForm::class)->name('letter.request');
     Route::get('/history', LetterHistory::class)->name('letter.history');

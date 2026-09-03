@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Absen\Cabang;
 use App\Models\Absen\Karyawan;
+use App\Models\Branch;
 use App\Models\Letter;
 use App\Services\LetterNumberService;
 use Illuminate\Contracts\View\View;
@@ -25,13 +26,21 @@ class LetterRequestForm extends Component
     // Employee Search / Autocomplete (Admin mode)
     public string $employeeSearch = '';
 
-    /** @var array<int, array{id: int|string, nik: string, name: string, branch_id: int|string|null, branch_code: string, branch_name: string, email: string|null, phone: string|null, position: string|null}> */
+    /** @var array<int, array{id: string, name: string, branch_id: int|string|null, branch_code: string, branch_name: string, email: string|null, phone: string|null, position: string|null, department?: string|null}> */
     public array $employeeResults = [];
 
-    /** @var array{id: int|string, nik: string, name: string, branch_id: int|string|null, branch_code: string, branch_name: string, email: string|null, phone: string|null, position: string|null}|null */
+    /** @var array{id: string, name: string, branch_id: int|string|null, branch_code: string, branch_name: string, email: string|null, phone: string|null, position: string|null, department?: string|null}|null */
     public ?array $selectedEmployee = null;
 
     public bool $isBranchLocked = false;
+
+    public bool $isEmailLocked = false;
+
+    public bool $isPhoneLocked = false;
+
+    public bool $isDepartmentLocked = false;
+
+    public bool $isPositionLocked = false;
 
     // Form inputs
     #[Validate('required|string|max:30')]
@@ -91,6 +100,27 @@ class LetterRequestForm extends Component
             $this->requestor_name = $sso['name'] ?? '';
             $this->requestor_department = $sso['department_name'] ?? '';
             $this->requestor_position = $sso['position_name'] ?? '';
+            $this->requestor_email = (string) ($sso['email'] ?? '');
+            $this->requestor_phone = (string) ($sso['phone'] ?? $sso['no_hp'] ?? '');
+
+            // Fallback sinkronisasi dari database Absenku SJP jika email / no_hp belum terisi di session
+            if ((empty($this->requestor_email) || empty($this->requestor_phone)) && ! empty($sso['nik'])) {
+                try {
+                    $karyawanRecord = Karyawan::where('nik', $sso['nik'])->first();
+                    if ($karyawanRecord) {
+                        if (empty($this->requestor_email) && ! empty($karyawanRecord->email)) {
+                            $this->requestor_email = (string) $karyawanRecord->email;
+                            session()->put('auth_sso.email', $this->requestor_email);
+                        }
+                        if (empty($this->requestor_phone) && ! empty($karyawanRecord->no_hp)) {
+                            $this->requestor_phone = (string) $karyawanRecord->no_hp;
+                            session()->put('auth_sso.phone', $this->requestor_phone);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Abaikan jika koneksi absen_db offline/tidak tersedia
+                }
+            }
 
             // Resolve branch_code from local Branch table using raw hr_code
             $rawHrCode = (string) ($sso['raw_branch_code'] ?? $sso['branch_code'] ?? '');
@@ -98,6 +128,12 @@ class LetterRequestForm extends Component
             $this->branch_code = $localBranch?->branch_code ?? (string) ($sso['branch_code'] ?? '');
             $this->branch_name = $localBranch?->name ?? (string) ($sso['branch_name'] ?? "Cabang {$rawHrCode}");
             $this->isBranchLocked = true;
+
+            // Kunci input jika datanya didapat langsung dari profil karyawan, atau izinkan edit manual jika kosong
+            $this->isEmailLocked = ! empty(trim($this->requestor_email));
+            $this->isPhoneLocked = ! empty(trim($this->requestor_phone));
+            $this->isDepartmentLocked = ! empty(trim($this->requestor_department));
+            $this->isPositionLocked = ! empty(trim($this->requestor_position));
         } else {
             // Admin mode default
             $activeBranches = Cabang::getActiveBranches();
@@ -111,6 +147,8 @@ class LetterRequestForm extends Component
                 if ($employees->isNotEmpty()) {
                     $this->selectEmployee($employees->first());
                 }
+            } else {
+                $this->employeeResults = Karyawan::searchEmployees('', 8)->toArray();
             }
         }
     }
@@ -121,15 +159,16 @@ class LetterRequestForm extends Component
             return;
         }
 
-        if (strlen(trim($value)) >= 2) {
-            $this->employeeResults = Karyawan::searchEmployees($value, 8)->toArray();
+        $query = trim($value);
+        if ($query !== '') {
+            $this->employeeResults = Karyawan::searchEmployees($query, 12)->toArray();
         } else {
-            $this->employeeResults = [];
+            $this->employeeResults = Karyawan::searchEmployees('', 8)->toArray();
         }
     }
 
     /**
-     * @param  array{id: int|string, nik: string, name: string, branch_id: int|string|null, branch_code: string, branch_name: string, email: string|null, phone: string|null, position: string|null}  $employee
+     * @param  array{id: string, name: string, branch_id: int|string|null, branch_code: string, branch_name: string, email: string|null, phone: string|null, position: string|null, department?: string|null}  $employee
      */
     public function selectEmployee(array $employee): void
     {
@@ -150,8 +189,12 @@ class LetterRequestForm extends Component
             $this->isBranchLocked = true;
         }
 
+        $this->isEmailLocked = ! empty(trim($this->requestor_email));
+        $this->isPhoneLocked = ! empty(trim($this->requestor_phone));
+        $this->isDepartmentLocked = ! empty(trim($this->requestor_department));
+        $this->isPositionLocked = ! empty(trim($this->requestor_position));
+
         $this->employeeSearch = '';
-        $this->employeeResults = [];
     }
 
     public function clearSelectedEmployee(): void
@@ -161,8 +204,18 @@ class LetterRequestForm extends Component
         }
 
         $this->selectedEmployee = null;
+        $this->employeeSearch = '';
+        $this->employeeResults = Karyawan::searchEmployees('', 8)->toArray();
+        $this->requestor_name = '';
+        $this->requestor_department = '';
+        $this->requestor_position = '';
+        $this->requestor_email = '';
+        $this->requestor_phone = '';
         $this->isBranchLocked = false;
-        $this->requestor_nik = '';
+        $this->isEmailLocked = false;
+        $this->isPhoneLocked = false;
+        $this->isDepartmentLocked = false;
+        $this->isPositionLocked = false;
     }
 
     public function updatedBranchCode(string $code): void
@@ -205,6 +258,12 @@ class LetterRequestForm extends Component
         ]);
 
         $this->showSuccessModal = true;
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Nomor Surat Terbit!',
+            'message' => "Nomor registrasi {$this->createdLetter->reference_number} berhasil dibuat.",
+        ]);
     }
 
     public function createAnother(): void
@@ -215,6 +274,11 @@ class LetterRequestForm extends Component
         $this->subject = '';
         $this->purpose = '';
         $this->archive_location = '';
+    }
+
+    public function closeSuccessModal(): void
+    {
+        $this->showSuccessModal = false;
     }
 
     public function render(LetterNumberService $service): View
@@ -230,6 +294,7 @@ class LetterRequestForm extends Component
             'branches' => $branches,
             'previewNumber' => $previewNumber,
             'romanMonths' => LetterNumberService::ROMAN_MONTHS,
+            'monthNames' => LetterNumberService::MONTH_NAMES,
         ]);
     }
 }

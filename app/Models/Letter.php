@@ -99,4 +99,16 @@ class Letter extends Model
             $query->where('month', $month);
         }
     }
+
+    /**
+     * Scope query to filter by date (created_at).
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeDate($query, ?string $date): void
+    {
+        if (! empty($date)) {
+            $query->whereDate('created_at', $date);
+        }
+    }
 }

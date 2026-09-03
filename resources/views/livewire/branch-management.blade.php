@@ -3,24 +3,28 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Pengaturan Cabang & Kode Surat</h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">Kelola data cabang yang tersinkron dari Absenku dan sesuaikan kode surat resmi masing-masing.</p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Kelola data cabang yang tersinkron dari absenkusjp.com dan sesuaikan kode surat resmi masing-masing.</p>
         </div>
     </div>
 
     <!-- Branch Table Card -->
-    <div class="card bg-base-100 shadow-xs border border-slate-200/80 rounded-3xl overflow-hidden">
+    <div class="card bg-base-100 shadow-xs border border-slate-200/80 rounded-3xl overflow-hidden relative">
+        <!-- Async Table Loading Bar -->
+        <div wire:loading wire:target="toggleActive, updateBranchCode, deleteBranch, gotoPage, nextPage, previousPage" class="h-1 w-full bg-gradient-to-r from-emerald-500 via-primary-500 to-teal-400 animate-pulse absolute top-0 left-0 right-0 z-20"></div>
+
         <div class="overflow-x-auto">
             <table class="table min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
                 <thead class="bg-slate-50/70">
                     <tr class="text-xs font-bold text-slate-500 uppercase tracking-wider">
                         <th class="px-6 py-4 w-12 text-center">No</th>
                         <th class="px-6 py-4 text-left">Nama Entitas / Cabang</th>
-                        <th class="px-6 py-4 text-left">Kode Asli (HRIS)</th>
+                        <th class="px-6 py-4 text-left">Kode Cabang</th>
                         <th class="px-6 py-4 text-left">Kode Surat Resmi</th>
-                        <th class="px-6 py-4 text-left">Status Surat</th>
+                        <th class="px-6 py-4 text-left">Status Kode</th>
+                        <th class="px-6 py-4 text-center w-24">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody wire:loading.class="opacity-50" wire:target="toggleActive, updateBranchCode, deleteBranch, gotoPage, nextPage, previousPage" class="divide-y divide-slate-100 transition-opacity duration-150">
                     @forelse ($branches as $index => $branch)
                         <tr class="hover:bg-slate-50/80 transition-colors group" wire:key="branch-{{ $branch->id }}">
                             <td class="px-6 py-4 text-center text-slate-400 font-mono font-medium">
@@ -37,14 +41,14 @@
                                     isEditing: false, 
                                     code: '{{ $branch->branch_code }}',
                                     save() {
-                                        if(this.code.trim() !== '' && this.code !== '{{ $branch->branch_code }}') {
-                                            $wire.updateBranchCode({{ $branch->id }}, this.code);
+                                        if(this.code.trim() !== '' && this.code.trim() !== '{{ $branch->branch_code }}') {
+                                            $wire.updateBranchCode({{ $branch->id }}, this.code.trim());
                                         }
                                         this.isEditing = false;
                                     }
                                 }" class="inline-flex items-center gap-2">
                                     
-                                    <div x-show="!isEditing" @click="isEditing = true; $nextTick(() => $refs.input.focus())" class="cursor-pointer inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-slate-100 border {{ empty($branch->branch_code) ? 'border-dashed border-amber-300 bg-amber-50/50' : 'border-transparent hover:border-slate-200' }} transition-all group">
+                                    <div x-show="!isEditing" @click="isEditing = true; $nextTick(() => $refs.input.focus())" class="cursor-pointer inline-flex items-center gap-1.5 py-1 px-2.5 rounded-md hover:bg-slate-100 border {{ empty($branch->branch_code) ? 'border-dashed border-amber-300 bg-amber-50/50' : 'border-transparent hover:border-slate-200' }} transition-all group">
                                         @if(!empty($branch->branch_code))
                                             <span class="font-mono font-bold text-primary-600 text-xs sm:text-sm">{{ $branch->branch_code }}</span>
                                         @else
@@ -54,7 +58,7 @@
                                             </span>
                                         @endif
                                         <button type="button" class="btn btn-ghost btn-xs btn-square text-slate-400 group-hover:text-primary-600 transition-colors" title="Edit Kode">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                             </svg>
                                         </button>
@@ -68,39 +72,78 @@
                                             @keydown.escape="isEditing = false; code = '{{ $branch->branch_code }}'"
                                             @blur="save()"
                                             type="text" 
-                                            class="input input-xs input-bordered w-28 font-mono font-bold text-primary-600 rounded-lg focus:border-primary-500 bg-white"
+                                            class="input input-xs input-bordered w-28 font-mono font-bold text-primary-600 rounded-sm focus:border-primary-500 bg-white mr-2"
                                         />
-                                        <button type="button" @click="save()" class="btn btn-xs btn-primary btn-square rounded-lg text-white font-bold" title="Simpan">
+                                        <button type="button" @click="save()" class="btn btn-xs btn-primary btn-square rounded-sm text-white font-bold cursor-pointer" title="Simpan">
                                             ✓
                                         </button>
                                     </div>
-                                    
                                 </div>
                                 @error('code')
-                                    <span class="text-rose-600 text-[10px] block mt-0.5 font-semibold">{{ $message }}</span>
+                                    <span class="text-red-600 text-[10px] block mt-0.5 font-semibold">{{ $message }}</span>
                                 @enderror
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <label class="cursor-pointer label justify-start gap-2.5 py-0">
-                                    <input type="checkbox" class="toggle toggle-primary toggle-sm" 
-                                        wire:change="toggleActive({{ $branch->id }})" 
-                                        {{ $branch->is_active ? 'checked' : '' }} />
+                                    <input 
+                                        type="checkbox" 
+                                        class="toggle toggle-primary toggle-sm cursor-pointer" 
+                                        @click.prevent="
+                                            if ({{ $branch->is_active ? 'true' : 'false' }}) {
+                                                window.confirmAction({
+                                                    title: 'Nonaktifkan Cabang?',
+                                                    text: 'Cabang {{ addslashes($branch->name) }} tidak akan tersedia dalam pemilihan nomor surat.',
+                                                    icon: 'warning',
+                                                    confirmButtonText: 'Ya, Nonaktifkan',
+                                                    cancelButtonText: 'Batal'
+                                                }).then((res) => {
+                                                    if (res.isConfirmed) {
+                                                        $wire.toggleActive({{ $branch->id }});
+                                                    }
+                                                });
+                                            } else {
+                                                $wire.toggleActive({{ $branch->id }});
+                                            }
+                                        "
+                                        {{ $branch->is_active ? 'checked' : '' }} 
+                                    />
                                     <span class="label-text text-xs font-bold {{ $branch->is_active ? 'text-primary-600' : 'text-slate-400' }}">
                                         {{ $branch->is_active ? 'Aktif' : 'Nonaktif' }}
                                     </span>
                                 </label>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <button type="button" 
+                                    @click.prevent="
+                                        window.confirmAction({
+                                            title: 'Hapus Cabang?',
+                                            text: 'Hapus cabang {{ addslashes($branch->name) }} dari sistem nomor surat?',
+                                            icon: 'warning',
+                                            confirmButtonText: 'Ya, Hapus',
+                                            cancelButtonText: 'Batal',
+                                            confirmButtonColor: '#dc2626'
+                                        }).then((res) => {
+                                            if (res.isConfirmed) {
+                                                $wire.deleteBranch({{ $branch->id }});
+                                            }
+                                        });
+                                    "
+                                    class="btn btn-ghost btn-sm btn-square rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                    title="Hapus Cabang dari Nomor Surat">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-16 text-slate-400">
-                                <div class="flex flex-col items-center justify-center">
-                                    <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center text-xl mb-2 shadow-2xs">
-                                        🏢
-                                    </div>
-                                    <p class="font-bold text-sm text-slate-900">Belum ada data cabang</p>
-                                    <p class="text-xs text-slate-500 mt-0.5">Data cabang akan otomatis tersinkron dari Absenku SJP.</p>
+                            <td colspan="6" class="text-center py-16 p-6">
+                                <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center text-xl mx-auto mb-3 shadow-2xs">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-inbox-off"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 4h10a2 2 0 0 1 2 2v10m-.593 3.422a2 2 0 0 1 -1.407 .578h-12a2 2 0 0 1 -2 -2v-12c0 -.554 .225 -1.056 .59 -1.418" /><path d="M4 13h3l3 3h4l.987 -.987m2.013 -2.013h3" /><path d="M3 3l18 18" /></svg>
                                 </div>
+                                <p class="font-bold text-sm text-slate-900">Belum ada data cabang</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Data cabang akan otomatis tersinkron dari absenkusjp.com</p>
                             </td>
                         </tr>
                     @endforelse

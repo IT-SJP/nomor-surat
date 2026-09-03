@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('branches', function (Blueprint $table) {
             $table->id();
             $table->string('hr_code')->unique();
-            $table->string('branch_code')->nullable->unique();
+            $table->string('branch_code')->nullable()->unique();
             $table->string('name');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
