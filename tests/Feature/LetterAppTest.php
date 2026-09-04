@@ -333,3 +333,44 @@ test('can submit letter request without optional purpose', function () {
         'purpose' => null,
     ]);
 });
+
+test('letter history renders custom daisyui pagination and handles perPage changes', function () {
+    // Create 20 letters to trigger pagination (default 15 per page)
+    Letter::factory()->count(20)->create([
+        'branch_code' => 'SJP',
+    ]);
+
+    Livewire::test(LetterHistory::class)
+        ->assertSee('Item per halaman:')
+        ->assertSeeHtml('wire:model.live="perPage"')
+        ->assertSeeHtml('join')
+        ->assertSeeHtml('Page 1')
+        ->set('perPage', 10)
+        ->assertSet('perPage', 10)
+        ->call('gotoPage', 2)
+        ->assertSet('paginators.page', 2);
+});
+
+test('collapsible icon-only drawer sidebar renders with DaisyUI 5 classes and tooltips', function () {
+    $response = $this->get(route('dashboard'));
+
+    $response->assertOk()
+        ->assertSeeHtml('drawer lg:drawer-open')
+        ->assertSeeHtml('id="main-drawer"')
+        ->assertSeeHtml('drawer-toggle inline')
+        ->assertSeeHtml('drawer-content')
+        ->assertSeeHtml('flex-none hidden lg:block')
+        ->assertSeeHtml('flex-1 flex justify-end items-center gap-3')
+        ->assertSeeHtml('drawer-side is-drawer-close:overflow-visible max-lg:hidden')
+        ->assertSeeHtml('is-drawer-close:w-16 is-drawer-open:w-64')
+        ->assertSeeHtml('is-drawer-close:tooltip is-drawer-close:tooltip-right')
+        ->assertSeeHtml('is-drawer-close:w-11 is-drawer-close:h-11')
+        ->assertSeeHtml('data-tip="Dashboard"')
+        ->assertSeeHtml('data-tip="Buat Nomor Surat"')
+        ->assertSeeHtml('data-tip="Riwayat Nomor Surat"')
+        ->assertSeeHtml('data-tip="Pengaturan Cabang"')
+        ->assertSeeHtml('data-tip="Daftar Tujuan Surat"')
+        ->assertSeeHtml('data-tip="Kembali Absenku SJP"')
+        ->assertSeeHtml('dock dock-bottom')
+        ->assertSeeHtml('is-drawer-close:hidden');
+});

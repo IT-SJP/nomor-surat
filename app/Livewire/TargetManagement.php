@@ -11,12 +11,14 @@ use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
-#[Title('Daftar & Pengaturan Tujuan Surat')]
+#[Title('Daftar Tujuan Surat')]
 class TargetManagement extends Component
 {
     use WithPagination;
 
     public bool $isAdmin = false;
+
+    public int $perPage = 15;
 
     public string $search = '';
 
@@ -49,6 +51,11 @@ class TargetManagement extends Component
     }
 
     public function updatedStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPerPage(): void
     {
         $this->resetPage();
     }
@@ -277,7 +284,7 @@ class TargetManagement extends Component
         $targets = $query
             ->orderBy('is_active', 'desc')
             ->orderBy('code', 'asc')
-            ->paginate(15);
+            ->paginate($this->perPage);
 
         $counts = [
             'all' => LetterTarget::count(),

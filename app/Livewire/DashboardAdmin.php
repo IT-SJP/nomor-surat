@@ -11,7 +11,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
-#[Title('Dashboard Statistik Surat')]
+#[Title('Dashboard Admin')]
 class DashboardAdmin extends Component
 {
     public function mount(): void

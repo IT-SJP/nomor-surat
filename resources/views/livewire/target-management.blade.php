@@ -1,17 +1,10 @@
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 {{ $isAdmin ? 'Pengaturan Master Tujuan Surat' : 'Daftar Tujuan Surat Resmi' }}
             </h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                @if($isAdmin)
-                    Kelola data tujuan baku, kode singkatan, dan status aktif untuk format penomoran surat resmi.
-                @else
-                    Daftar referensi kode tujuan surat baku yang digunakan dalam format nomor surat resmi PT Selamat Jaya Persada.
-                @endif
-            </p>
         </div>
 
         @if($isAdmin)
@@ -53,27 +46,27 @@
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <!-- Search Input -->
         <div class="relative flex-1 max-w-md">
-            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10 text-slate-400">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10 text-slate-400 dark:text-slate-500">
                 <span wire:loading.remove wire:target="search">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </span>
                 <span wire:loading wire:target="search">
-                    <span class="loading loading-spinner loading-xs text-primary-600"></span>
+                    <span class="loading loading-spinner loading-xs text-primary-600 dark:text-primary-400"></span>
                 </span>
             </span>
             <input
                 wire:model.live.debounce.250ms="search"
                 type="text"
                 placeholder="Cari kode atau nama tujuan..."
-                class="input input-bordered w-full rounded-xl text-xs sm:text-sm pl-10 pr-9 focus:border-primary-500 bg-slate-50/80 focus:bg-white transition-all shadow-2xs"
+                class="input input-bordered w-full rounded-xl text-xs sm:text-sm pl-10 pr-9 focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-2xs"
             />
             @if(!empty($search))
                 <button
                     type="button"
                     wire:click="$set('search', '')"
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
                     title="Hapus pencarian"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,25 +77,25 @@
         </div>
 
         <!-- Filter Status Buttons -->
-        <div class="inline-flex rounded-xl p-1 bg-slate-100 border border-slate-200 shrink-0 self-start sm:self-auto">
+        <div class="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0 self-start sm:self-auto">
             <button
                 type="button"
                 wire:click="$set('statusFilter', 'all')"
-                class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer {{ $statusFilter === 'all' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800' }}"
+                class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer {{ $statusFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}"
             >
                 Semua ({{ $counts['all'] }})
             </button>
             <button
                 type="button"
                 wire:click="$set('statusFilter', 'active')"
-                class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer {{ $statusFilter === 'active' ? 'bg-white text-emerald-700 shadow-2xs' : 'text-slate-500 hover:text-emerald-700' }}"
+                class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer {{ $statusFilter === 'active' ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 shadow-2xs' : 'text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400' }}"
             >
                 Aktif ({{ $counts['active'] }})
             </button>
             <button
                 type="button"
                 wire:click="$set('statusFilter', 'inactive')"
-                class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer {{ $statusFilter === 'inactive' ? 'bg-white text-rose-700 shadow-2xs' : 'text-slate-500 hover:text-rose-700' }}"
+                class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer {{ $statusFilter === 'inactive' ? 'bg-white dark:bg-slate-700 text-rose-700 dark:text-rose-400 shadow-2xs' : 'text-slate-500 dark:text-slate-400 hover:text-rose-700 dark:hover:text-rose-400' }}"
             >
                 Nonaktif ({{ $counts['inactive'] }})
             </button>
@@ -110,14 +103,14 @@
     </div>
 
     <!-- Table Card -->
-    <div class="card bg-base-100 shadow-xs border border-slate-200/80 rounded-3xl overflow-hidden relative">
+    <div class="card bg-base-100 dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden relative">
         <!-- Async Table Loading Bar -->
         <div wire:loading wire:target="search, statusFilter, toggleActive, deleteTarget, gotoPage, nextPage, previousPage" class="h-1 w-full bg-gradient-to-r from-emerald-500 via-primary-500 to-teal-400 animate-pulse absolute top-0 left-0 right-0 z-20"></div>
 
         <div class="overflow-x-auto">
-            <table class="table min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
-                <thead class="bg-slate-50/70">
-                    <tr class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <table class="table min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-xs sm:text-sm">
+                <thead class="bg-slate-50/70 dark:bg-slate-800/70">
+                    <tr class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         <th class="px-6 py-4 w-12 text-center">No</th>
                         <th class="px-6 py-4 text-left w-32">Kode Baku</th>
                         <th class="px-6 py-4 text-left">Nama Tujuan Surat</th>
@@ -128,10 +121,10 @@
                         @endif
                     </tr>
                 </thead>
-                <tbody wire:loading.class="opacity-50" wire:target="search, statusFilter, toggleActive, deleteTarget, gotoPage, nextPage, previousPage" class="divide-y divide-slate-100 transition-opacity duration-150">
+                <tbody wire:loading.class="opacity-50" wire:target="search, statusFilter, toggleActive, deleteTarget, gotoPage, nextPage, previousPage" class="divide-y divide-slate-100 dark:divide-slate-800/80 transition-opacity duration-150">
                     @forelse ($targets as $index => $target)
-                        <tr class="hover:bg-slate-50/80 transition-colors group" wire:key="target-{{ $target->id }}">
-                            <td class="px-6 py-4 text-center text-slate-400 font-mono font-medium">
+                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group" wire:key="target-{{ $target->id }}">
+                            <td class="px-6 py-4 text-center text-slate-400 dark:text-slate-500 font-mono font-medium">
                                 {{ $targets->firstItem() + $index }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -140,12 +133,12 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="font-bold text-slate-900 text-xs sm:text-sm">
+                                <div class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
                                     {{ $target->name }}
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-xs text-slate-500 max-w-xs sm:max-w-md truncate">
+                                <div class="text-xs text-slate-500 dark:text-slate-400 max-w-xs sm:max-w-md truncate">
                                     {{ $target->description ?: '-' }}
                                 </div>
                             </td>
@@ -176,7 +169,7 @@
                                                     $wire.toggleActive({{ $target->id }});
                                                 }
                                             "
-                                            class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none {{ $target->is_active ? 'bg-primary-600' : 'bg-slate-300' }} disabled:opacity-50"
+                                            class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none {{ $target->is_active ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700' }} disabled:opacity-50"
                                             title="Klik untuk {{ $target->is_active ? 'menonaktifkan' : 'mengaktifkan' }} status"
                                         >
                                             <span
@@ -184,13 +177,13 @@
                                                 class="pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out m-[3px] {{ $target->is_active ? 'translate-x-4' : 'translate-x-0' }}"
                                             ></span>
                                         </button>
-                                        <span class="text-[11px] font-bold w-12 text-left select-none {{ $target->is_active ? 'text-emerald-700' : 'text-slate-400' }}">
+                                        <span class="text-[11px] font-bold w-12 text-left select-none {{ $target->is_active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' }}">
                                             {{ $target->is_active ? 'Aktif' : 'Nonaktif' }}
                                         </span>
                                     </div>
                                 @else
                                     <!-- Read-only Badge for Karyawan -->
-                                    <span class="badge {{ $target->is_active ? 'badge-success badge-soft text-emerald-700' : 'badge-ghost text-slate-400' }} badge-sm font-semibold rounded-md">
+                                    <span class="badge {{ $target->is_active ? 'badge-success badge-soft text-emerald-700 dark:text-emerald-300 dark:bg-emerald-950/40' : 'badge-ghost text-slate-400 dark:text-slate-500 dark:bg-slate-800' }} badge-sm font-semibold rounded-md">
                                         {{ $target->is_active ? 'Aktif' : 'Nonaktif' }}
                                     </span>
                                 @endif
@@ -202,7 +195,7 @@
                                         <button
                                             type="button"
                                             wire:click="openEditModal({{ $target->id }})"
-                                            class="btn btn-ghost btn-sm btn-square rounded-md text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors cursor-pointer"
+                                            class="btn btn-ghost btn-sm btn-square rounded-md text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/40 transition-colors cursor-pointer"
                                             title="Edit Tujuan"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -227,7 +220,7 @@
                                                     }
                                                 });
                                             "
-                                            class="btn btn-ghost btn-sm btn-square rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                            class="btn btn-ghost btn-sm btn-square rounded-md text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                                             title="Hapus Tujuan"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,13 +234,13 @@
                     @empty
                         <tr>
                             <td colspan="{{ $isAdmin ? 6 : 5 }}" class="text-center py-16 p-6">
-                                <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center text-xl mx-auto mb-3 shadow-2xs">
+                                <div class="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 flex items-center justify-center text-xl mx-auto mb-3 shadow-2xs">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                 </div>
-                                <p class="font-bold text-sm text-slate-900">Tidak ada tujuan surat ditemukan</p>
-                                <p class="text-xs text-slate-400 mt-1">Coba ubah kata kunci pencarian atau filter status Anda.</p>
+                                <p class="font-bold text-sm text-slate-900 dark:text-white">Tidak ada tujuan surat ditemukan</p>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Coba ubah kata kunci pencarian atau filter status Anda.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -256,10 +249,8 @@
         </div>
 
         <!-- Pagination -->
-        @if ($targets->hasPages())
-            <div class="p-4 border-t border-slate-100 bg-white flex justify-center">
-                {{ $targets->links() }}
-            </div>
+        @if ($targets->total() > 0)
+            <x-pagination-footer :items="$targets" label="tujuan" />
         @endif
     </div>
 
@@ -267,16 +258,16 @@
         <!-- ========================================== -->
         <!-- CREATE MODAL (Admin Only)                  -->
         <!-- ========================================== -->
-        <div class="modal {{ $showCreateModal ? 'modal-open' : '' }} z-[100] backdrop-blur-sm bg-slate-900/40" role="dialog">
-            <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 p-6 sm:p-7 space-y-5 shadow-2xl bg-white relative">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="modal {{ $showCreateModal ? 'modal-open' : '' }} z-[100] backdrop-blur-sm bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
+            <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900 relative">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                     <div class="flex items-center gap-2">
-                        <h3 class="text-lg font-extrabold text-slate-900">Tambah Tujuan Surat Baku</h3>
+                        <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Tambah Tujuan Surat Baku</h3>
                     </div>
                     <button
                         type="button"
                         wire:click="closeCreateModal"
-                        class="btn btn-ghost btn-sm btn-square rounded-md text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors"
+                        class="btn btn-ghost btn-sm btn-square rounded-md text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors cursor-pointer"
                         title="Tutup Modal"
                         aria-label="Tutup"
                     >
@@ -289,30 +280,30 @@
                 <form wire:submit="createTarget" class="space-y-4">
                     <!-- Kode Tujuan -->
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                             Kode Singkatan Baku <span class="text-rose-500">*</span>
                         </label>
                         <input
                             wire:model="code"
                             type="text"
                             placeholder="Contoh: KODE"
-                            class="input input-bordered w-full rounded-xl text-sm font-mono uppercase focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                            class="input input-bordered w-full rounded-xl text-sm font-mono uppercase focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             required
                         />
-                        <span class="text-[11px] text-slate-400 block">Kode ini akan muncul di nomor surat: [Nomor]/<strong>[KODE]</strong>/[Cabang]/[Bulan]/[Tahun]</span>
+                        <span class="text-[11px] text-slate-400 dark:text-slate-500 block">Kode ini akan muncul di nomor surat: [Nomor]/<strong>[KODE]</strong>/[Cabang]/[Bulan]/[Tahun]</span>
                         @error('code') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Nama Tujuan -->
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                             Nama Tujuan / Instansi <span class="text-rose-500">*</span>
                         </label>
                         <input
                             wire:model="name"
                             type="text"
                             placeholder="Masukkan nama tujuan surat..."
-                            class="input input-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                            class="input input-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             required
                         />
                         @error('name') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
@@ -320,14 +311,14 @@
 
                     <!-- Keterangan -->
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Keterangan / Peruntukan <span class="text-slate-400 font-normal lowercase">(opsional)</span>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Keterangan / Peruntukan <span class="text-slate-400 dark:text-slate-500 font-normal lowercase">(opsional)</span>
                         </label>
                         <textarea
                             wire:model="description"
                             rows="2"
                             placeholder="Deskripsi singkat jenis surat atau instansi tujuan..."
-                            class="textarea textarea-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                            class="textarea textarea-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         ></textarea>
                         @error('description') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                     </div>
@@ -340,16 +331,16 @@
                                 type="checkbox"
                                 class="toggle toggle-primary toggle-sm cursor-pointer"
                             />
-                            <span class="text-xs font-bold text-slate-700">Aktifkan tujuan ini segera</span>
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Aktifkan tujuan ini segera</span>
                         </label>
                     </div>
 
                     <!-- Actions -->
-                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                         <button
                             type="button"
                             wire:click="closeCreateModal"
-                            class="btn btn-ghost btn-sm rounded-md text-xs text-slate-500 hover:text-slate-700 cursor-pointer"
+                            class="btn btn-ghost btn-sm rounded-md text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                         >
                             Batal
                         </button>
@@ -372,16 +363,16 @@
         <!-- ========================================== -->
         <!-- EDIT MODAL (Admin Only)                    -->
         <!-- ========================================== -->
-        <div class="modal {{ $showEditModal ? 'modal-open' : '' }} z-[100] backdrop-blur-sm bg-slate-900/40" role="dialog">
-            <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 p-6 sm:p-7 space-y-5 shadow-2xl bg-white relative">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="modal {{ $showEditModal ? 'modal-open' : '' }} z-[100] backdrop-blur-sm bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
+            <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900 relative">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                     <div class="flex items-center gap-2">
-                        <h3 class="text-lg font-extrabold text-slate-900">Ubah Tujuan Surat Baku</h3>
+                        <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Ubah Tujuan Surat Baku</h3>
                     </div>
                     <button
                         type="button"
                         wire:click="closeEditModal"
-                        class="btn btn-ghost btn-sm btn-square rounded-md text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors"
+                        class="btn btn-ghost btn-sm btn-square rounded-md text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors cursor-pointer"
                         title="Tutup Modal"
                         aria-label="Tutup"
                     >
@@ -394,14 +385,14 @@
                 <form wire:submit="updateTarget" class="space-y-4">
                     <!-- Kode Tujuan -->
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                             Kode Singkatan Baku <span class="text-rose-500">*</span>
                         </label>
                         <input
                             wire:model="code"
                             type="text"
                             placeholder="Contoh: KODE"
-                            class="input input-bordered w-full rounded-xl text-sm font-mono uppercase focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                            class="input input-bordered w-full rounded-xl text-sm font-mono uppercase focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             required
                         />
                         @error('code') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
@@ -409,14 +400,14 @@
 
                     <!-- Nama Tujuan -->
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                             Nama Tujuan / Instansi <span class="text-rose-500">*</span>
                         </label>
                         <input
                             wire:model="name"
                             type="text"
                             placeholder="Masukkan nama tujuan surat..."
-                            class="input input-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                            class="input input-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             required
                         />
                         @error('name') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
@@ -424,14 +415,14 @@
 
                     <!-- Keterangan -->
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Keterangan / Peruntukan <span class="text-slate-400 font-normal lowercase">(opsional)</span>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Keterangan / Peruntukan <span class="text-slate-400 dark:text-slate-500 font-normal lowercase">(opsional)</span>
                         </label>
                         <textarea
                             wire:model="description"
                             rows="2"
                             placeholder="Deskripsi singkat jenis surat atau instansi tujuan..."
-                            class="textarea textarea-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                            class="textarea textarea-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         ></textarea>
                         @error('description') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                     </div>
@@ -444,16 +435,16 @@
                                 type="checkbox"
                                 class="toggle toggle-primary toggle-sm cursor-pointer"
                             />
-                            <span class="text-xs font-bold text-slate-700">Status Aktif</span>
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Status Aktif</span>
                         </label>
                     </div>
 
                     <!-- Actions -->
-                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                         <button
                             type="button"
                             wire:click="closeEditModal"
-                            class="btn btn-ghost btn-sm rounded-md text-xs text-slate-500 hover:text-slate-700 cursor-pointer"
+                            class="btn btn-ghost btn-sm rounded-md text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                         >
                             Batal
                         </button>

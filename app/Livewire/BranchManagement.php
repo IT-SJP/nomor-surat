@@ -16,6 +16,13 @@ class BranchManagement extends Component
 {
     use WithPagination;
 
+    public int $perPage = 15;
+
+    public function updatedPerPage(): void
+    {
+        $this->resetPage();
+    }
+
     public function mount(): void
     {
         $sso = session('auth_sso', []);
@@ -97,7 +104,7 @@ class BranchManagement extends Component
         $branches = Branch::query()
             ->orderBy('is_active', 'desc')
             ->orderBy('name', 'asc')
-            ->paginate(15);
+            ->paginate($this->perPage);
 
         return view('livewire.branch-management', [
             'branches' => $branches,

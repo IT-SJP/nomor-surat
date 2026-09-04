@@ -11,12 +11,12 @@
     <!-- Top Header & Breadcrumbs -->
     <div class="flex flex-col sm:flex-row sm:items-center gap-4 pb-1">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Buat Nomor Surat Keluar
             </h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
                 @if($isKaryawan)
-                    Formulir penerbitan nomor surat resmi cabang <strong class="text-primary-600 font-bold">{{ $branch_name }}</strong>.
+                    Formulir penerbitan nomor surat resmi cabang <strong class="text-primary-600 dark:text-primary-400 font-bold">{{ $branch_name }}</strong>.
                 @else
                     Penerbitan nomor surat keluar untuk seluruh entitas anak perusahaan SJP Holding.
                 @endif
@@ -65,35 +65,35 @@
     <!-- Interactive Form -->
     <form wire:submit="submit" class="space-y-6">
         <!-- Section 1: Entitas & Periode -->
-        <div class="card bg-base-100 shadow-xs border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6">
-            <div class="flex items-center gap-3 pb-5 border-b border-slate-100">
-                <div class="w-10 h-10 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center font-extrabold shadow-2xs">
+        <div class="card bg-base-100 dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+            <div class="flex items-center gap-3 pb-5 border-b border-slate-100 dark:border-slate-800/80">
+                <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/50 text-primary-700 dark:text-primary-400 border border-primary-100 dark:border-primary-800/50 flex items-center justify-center font-extrabold shadow-2xs">
                     1
                 </div>
                 <div>
-                    <h2 class="text-lg font-extrabold text-slate-900">Entitas Perusahaan & Periode Surat</h2>
-                    <p class="text-xs text-slate-500">Tentukan cabang penerbit dan periode waktu surat resmi</p>
+                    <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Entitas Perusahaan & Periode Surat</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Tentukan cabang penerbit dan periode waktu surat resmi</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                 <!-- Cabang Input -->
                 <div class="md:col-span-6 space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                         Cabang / Entitas Penerbit <span class="text-rose-500">*</span>
                     </label>
 
                     @if($isKaryawan)
                         <!-- Karyawan Mode: Clean locked visual card -->
-                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <div class="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
                             <div class="space-y-0.5">
-                                <span class="text-[10px] text-slate-400 font-medium">Cabang Terdaftar Anda:</span>
-                                <h4 class="font-bold text-sm text-primary-600">{{ $branch_name }}</h4>
+                                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Cabang Terdaftar Anda:</span>
+                                <h4 class="font-bold text-sm text-primary-600 dark:text-primary-400">{{ $branch_name }}</h4>
                             </div>
                         </div>
                     @else
                         <!-- Admin Mode: Select branch -->
-                        <select wire:model.live="branch_code" class="select select-bordered w-full rounded-lg text-sm text-slate-700 font-semibold bg-white focus:border-primary-500">
+                        <select wire:model.live="branch_code" class="select select-bordered w-full rounded-lg text-sm text-slate-700 dark:text-slate-200 font-semibold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500">
                             @foreach($branches as $b)
                                 <option value="{{ $b['code'] }}">
                                     {{ $b['code'] }} &mdash; {{ $b['name'] }}
@@ -107,7 +107,7 @@
                 <!-- Tujuan / Penerima -->
                 <div class="md:col-span-6 space-y-1.5" x-data="{ openTargetSuggest: false }" @click.outside="openTargetSuggest = false">
                     <div class="flex items-center justify-between mb-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                             Tujuan / Instansi / Penerima <span class="text-rose-500">*</span>
                         </label>
                     </div>
@@ -119,16 +119,16 @@
                             @click="openTargetSuggest = true"
                             type="text"
                             placeholder="Contoh: Internal Memo / Bank Mandiri"
-                            class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white pr-10"
+                            class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 pr-10"
                             autocomplete="off"
                             required
                         />
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-1">
                             <span wire:loading wire:target="target_code">
-                                <span class="loading loading-spinner loading-xs text-primary-600"></span>
+                                <span class="loading loading-spinner loading-xs text-primary-600 dark:text-primary-400"></span>
                             </span>
                             @if(!empty($target_code))
-                                <button type="button" wire:click="$set('target_code', '')" class="text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                                <button type="button" wire:click="$set('target_code', '')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer p-1">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
@@ -145,11 +145,11 @@
                             x-transition:leave="transition ease-in duration-75"
                             x-transition:leave-start="opacity-100 translate-y-0"
                             x-transition:leave-end="opacity-0 translate-y-1"
-                            class="absolute top-full left-0 right-0 z-40 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden"
+                            class="absolute top-full left-0 right-0 z-40 mt-1 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
                             style="display: none;"
                         >
-                            <div class="p-1.5 max-h-56 overflow-y-auto divide-y divide-slate-100">
-                                <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            <div class="p-1.5 max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/60">
+                                <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                                     Pilihan Tujuan Baku Terdaftar:
                                 </div>
                                 @foreach($standardTargets as $st)
@@ -157,14 +157,14 @@
                                         type="button"
                                         wire:click="selectTarget('{{ $st->code }}', '{{ addslashes($st->name) }}')"
                                         @click="openTargetSuggest = false"
-                                        class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-primary-50/80 transition-colors text-left group cursor-pointer"
+                                        class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-primary-50/80 dark:hover:bg-primary-950/50 transition-colors text-left group cursor-pointer"
                                     >
                                         <div class="flex items-center gap-2">
                                             <span class="badge badge-primary badge-outline badge-sm font-mono font-bold">{{ $st->code }}</span>
-                                            <span class="text-xs font-semibold text-slate-800 group-hover:text-primary-700">{{ $st->name }}</span>
+                                            <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-primary-700 dark:group-hover:text-primary-300">{{ $st->name }}</span>
                                         </div>
                                         @if($st->description)
-                                            <span class="text-[11px] text-slate-400 truncate max-w-[140px]">{{ $st->description }}</span>
+                                            <span class="text-[11px] text-slate-400 dark:text-slate-500 truncate max-w-[140px]">{{ $st->description }}</span>
                                         @endif
                                     </button>
                                 @endforeach
@@ -177,10 +177,10 @@
                 <!-- Bulan & Tahun -->
                 <div class="md:col-span-6 grid grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                             Bulan Surat <span class="text-rose-500">*</span>
                         </label>
-                        <select wire:model.live="month" class="select select-bordered w-full rounded-lg text-sm text-slate-700 bg-white focus:border-primary-500">
+                        <select wire:model.live="month" class="select select-bordered w-full rounded-lg text-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500">
                             @foreach($romanMonths as $num => $roman)
                                 <option value="{{ $num }}">{{ $monthNames[$num] ?? "Bulan {$num}" }} ({{ $roman }})</option>
                             @endforeach
@@ -189,7 +189,7 @@
                     </div>
 
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                             Tahun <span class="text-rose-500">*</span>
                         </label>
                         <input
@@ -197,7 +197,7 @@
                             type="number"
                             min="2000"
                             max="3000"
-                            class="input input-bordered w-full rounded-lg text-sm font-mono focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                            class="input input-bordered w-full rounded-lg text-sm font-mono focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100"
                             required
                         />
                         @error('year') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
@@ -207,82 +207,82 @@
         </div>
 
         <!-- Section 2: Detail Perihal & Keperluan -->
-        <div class="card bg-base-100 shadow-xs border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6">
-            <div class="flex items-center gap-3 pb-5 border-b border-slate-100">
-                <div class="w-10 h-10 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center font-extrabold shadow-2xs">
+        <div class="card bg-base-100 dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+            <div class="flex items-center gap-3 pb-5 border-b border-slate-100 dark:border-slate-800/80">
+                <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/50 text-primary-700 dark:text-primary-400 border border-primary-100 dark:border-primary-800/50 flex items-center justify-center font-extrabold shadow-2xs">
                     2
                 </div>
                 <div>
-                    <h2 class="text-lg font-extrabold text-slate-900">Perihal & Keperluan Surat</h2>
-                    <p class="text-xs text-slate-500">Tuliskan peruntukan dan isi ringkas nomor surat yang diajukan</p>
+                    <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Perihal & Keperluan Surat</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Tuliskan peruntukan dan isi ringkas nomor surat yang diajukan</p>
                 </div>
             </div>
 
             <div class="space-y-5">
                 <!-- Perihal Input -->
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                         Perihal / Judul Surat <span class="text-rose-500">*</span>
                     </label>
                     <input
                         wire:model="subject"
                         type="text"
                         placeholder="Contoh: Laporan Kegiatan Operasional Tambang Periode Q3"
-                        class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                        class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         required
                     />
                     @error('subject') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
 
                     <!-- Fast suggestion chips for Subject -->
                     <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span class="text-[10px] text-slate-400 font-medium">Kategori:</span>
-                        <button type="button" @click="setSubject('Surat Tugas Lapangan')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Surat Tugas</button>
-                        <button type="button" @click="setSubject('Surat Pengantar Dokumen')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Surat Pengantar</button>
-                        <button type="button" @click="setSubject('Laporan Kegiatan Bulanan')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Laporan Bulanan</button>
-                        <button type="button" @click="setSubject('Surat Penawaran Harga')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Penawaran</button>
-                        <button type="button" @click="setSubject('Surat Permohonan Kerjasama')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Permohonan</button>
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Kategori:</span>
+                        <button type="button" @click="setSubject('Surat Tugas Lapangan')" class="badge badge-primary badge-soft dark:bg-primary-950/60 dark:text-primary-300 hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Surat Tugas</button>
+                        <button type="button" @click="setSubject('Surat Pengantar Dokumen')" class="badge badge-primary badge-soft dark:bg-primary-950/60 dark:text-primary-300 hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Surat Pengantar</button>
+                        <button type="button" @click="setSubject('Laporan Kegiatan Bulanan')" class="badge badge-primary badge-soft dark:bg-primary-950/60 dark:text-primary-300 hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Laporan Bulanan</button>
+                        <button type="button" @click="setSubject('Surat Penawaran Harga')" class="badge badge-primary badge-soft dark:bg-primary-950/60 dark:text-primary-300 hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Penawaran</button>
+                        <button type="button" @click="setSubject('Surat Permohonan Kerjasama')" class="badge badge-primary badge-soft dark:bg-primary-950/60 dark:text-primary-300 hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Permohonan</button>
                     </div>
                 </div>
 
                 <!-- Keperluan / Keterangan -->
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                         Keperluan / Keterangan
                     </label>
                     <textarea
                         wire:model="purpose"
                         rows="3"
                         placeholder="Jelaskan secara ringkas peruntukan atau isi surat keluar..."
-                        class="textarea textarea-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                        class="textarea textarea-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     ></textarea>
                     @error('purpose') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Lokasi Arsip / Link Dokumen -->
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                        Lokasi Arsip Fisik / Link Drive <span class="text-slate-400 font-normal lowercase">(opsional)</span>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Lokasi Arsip Fisik / Link Drive <span class="text-slate-400 dark:text-slate-500 font-normal lowercase">(opsional)</span>
                     </label>
                     <input
                         wire:model="archive_location"
                         type="text"
                         placeholder="Contoh: Lemari Arsip 01-B / Link Dokumen Google Drive"
-                        class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
+                        class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                 </div>
             </div>
         </div>
 
         <!-- Section 3: Data Pemohon (Karyawan) -->
-        <div class="card bg-base-100 shadow-xs border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6">
-            <div class="flex items-center justify-between pb-5 border-b border-slate-100">
+        <div class="card bg-base-100 dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+            <div class="flex items-center justify-between pb-5 border-b border-slate-100 dark:border-slate-800/80">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center font-extrabold shadow-2xs">
+                    <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/50 text-primary-700 dark:text-primary-400 border border-primary-100 dark:border-primary-800/50 flex items-center justify-center font-extrabold shadow-2xs">
                         3
                     </div>
                     <div>
-                        <h2 class="text-lg font-extrabold text-slate-900">Data Pemohon (Karyawan)</h2>
-                        <p class="text-xs text-slate-500">Identitas penanggung jawab pengajuan nomor surat</p>
+                        <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Data Pemohon (Karyawan)</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Identitas penanggung jawab pengajuan nomor surat</p>
                     </div>
                 </div>
             </div>
@@ -290,29 +290,29 @@
             <!-- Admin Mode: Select2-Style Searchable Employee Combobox -->
             @if(!$isKaryawan)
                 <div class="space-y-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-primary-700">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-primary-700 dark:text-primary-400">
                         Cari / Pilih Karyawan:
                     </label>
 
                     @if($selectedEmployee)
                         <!-- Selected Employee Card (Select2 Selected State) -->
-                        <div class="flex items-center justify-between p-3.5 rounded-2xl border border-primary-200 bg-primary-50/60 transition-all shadow-2xs">
+                        <div class="flex items-center justify-between p-3.5 rounded-2xl border border-primary-200 dark:border-primary-800/60 bg-primary-50/60 dark:bg-primary-950/40 transition-all shadow-2xs">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0">
                                     {{ strtoupper(substr($selectedEmployee['name'], 0, 2)) }}
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-extrabold text-sm text-slate-900">{{ $selectedEmployee['name'] }}</span>
+                                        <span class="font-extrabold text-sm text-slate-900 dark:text-white">{{ $selectedEmployee['name'] }}</span>
                                         <span class="badge badge-primary badge-outline badge-xs font-mono font-bold">{{ $selectedEmployee['branch_code'] ?: 'Pusat' }}</span>
                                     </div>
-                                    <p class="text-xs text-slate-600">{{ $selectedEmployee['department'] }} &bull; {{ $selectedEmployee['position'] }}</p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300">{{ $selectedEmployee['department'] }} &bull; {{ $selectedEmployee['position'] }}</p>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 wire:click="clearSelectedEmployee"
-                                class="btn btn-sm btn-ghost btn-circle text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                class="btn btn-sm btn-ghost btn-circle text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
                                 title="Hapus Pilihan"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -335,21 +335,21 @@
                                     @click="open = true"
                                     type="text"
                                     placeholder="Ketik nama karyawan..."
-                                    class="input input-bordered w-full rounded-xl text-sm pl-10 pr-16 focus:border-primary-500 bg-slate-50/80 focus:bg-white transition-all shadow-2xs"
+                                    class="input input-bordered w-full rounded-xl text-sm pl-10 pr-16 focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-2xs"
                                     autocomplete="off"
                                 />
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-1.5">
                                     <span wire:loading wire:target="employeeSearch">
-                                        <span class="loading loading-spinner loading-xs text-primary-600"></span>
+                                        <span class="loading loading-spinner loading-xs text-primary-600 dark:text-primary-400"></span>
                                     </span>
                                     @if(!empty($employeeSearch))
-                                        <button type="button" wire:click="$set('employeeSearch', '')" class="text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                                        <button type="button" wire:click="$set('employeeSearch', '')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer p-1">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                             </svg>
                                         </button>
                                     @endif
-                                    <button type="button" @click="open = !open" class="text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                                    <button type="button" @click="open = !open" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer p-1">
                                         <svg class="w-4 h-4 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                         </svg>
@@ -366,39 +366,39 @@
                                 x-transition:leave="transition ease-in duration-75"
                                 x-transition:leave-start="opacity-100 translate-y-0"
                                 x-transition:leave-end="opacity-0 translate-y-1"
-                                class="absolute top-full left-0 right-0 z-50 mt-1.5 bg-base-100 rounded-2xl shadow-xl border border-slate-200 overflow-hidden"
+                                class="absolute top-full left-0 right-0 z-50 mt-1.5 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
                                 style="display: none;"
                             >
                                 @if(!empty($employeeResults))
-                                    <div class="p-1.5 max-h-72 overflow-y-auto divide-y divide-slate-100">
+                                    <div class="p-1.5 max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/60">
                                         @foreach($employeeResults as $emp)
                                             <button
                                                 type="button"
                                                 wire:click="selectEmployee({{ json_encode($emp) }})"
                                                 @click="open = false"
-                                                class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-primary-50/80 transition-colors text-left group cursor-pointer"
+                                                class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-primary-50/80 dark:hover:bg-primary-950/60 transition-colors text-left group cursor-pointer"
                                             >
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-9 h-9 rounded-xl bg-primary-100 text-primary-700 group-hover:bg-primary-600 group-hover:text-white flex items-center justify-center font-extrabold text-xs transition-colors shrink-0 shadow-2xs">
+                                                    <div class="w-9 h-9 rounded-xl bg-primary-100 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 group-hover:bg-primary-600 group-hover:text-white flex items-center justify-center font-extrabold text-xs transition-colors shrink-0 shadow-2xs">
                                                         {{ strtoupper(substr($emp['name'], 0, 2)) }}
                                                     </div>
                                                     <div>
-                                                        <p class="font-bold text-xs text-slate-900 group-hover:text-primary-700 transition-colors">{{ $emp['name'] }}</p>
-                                                        <p class="text-[11px] text-slate-500 leading-tight">{{ $emp['department'] }} &bull; {{ $emp['position'] }}</p>
+                                                        <p class="font-bold text-xs text-slate-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-colors">{{ $emp['name'] }}</p>
+                                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">{{ $emp['department'] }} &bull; {{ $emp['position'] }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="text-right shrink-0 pl-2">
-                                                    <span class="badge badge-outline badge-sm font-mono font-bold text-primary-600 border-primary-200 rounded-md">{{ $emp['branch_code'] ?: 'Pusat' }}</span>
+                                                    <span class="badge badge-outline badge-sm font-mono font-bold text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-700 rounded-md">{{ $emp['branch_code'] ?: 'Pusat' }}</span>
                                                 </div>
                                             </button>
                                         @endforeach
                                     </div>
                                 @elseif(strlen(trim($employeeSearch)) >= 1)
-                                    <div class="p-4 text-center text-xs text-slate-500">
-                                        Tidak ada karyawan ditemukan dengan kata kunci "<span class="font-semibold text-slate-800">{{ $employeeSearch }}</span>"
+                                    <div class="p-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                                        Tidak ada karyawan ditemukan dengan kata kunci "<span class="font-semibold text-slate-800 dark:text-slate-200">{{ $employeeSearch }}</span>"
                                     </div>
                                 @else
-                                    <div class="p-3 text-center text-xs text-slate-400">
+                                    <div class="p-3 text-center text-xs text-slate-400 dark:text-slate-500">
                                         Ketik nama karyawan untuk mencari...
                                     </div>
                                 @endif
@@ -410,14 +410,14 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div class="space-y-1.5 sm:col-span-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                         Nama Lengkap Pemohon <span class="text-rose-500">*</span>
                     </label>
                     <input
                         wire:model="requestor_name"
                         type="text"
                         placeholder="Nama Lengkap Pemohon"
-                        class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white {{ $isKaryawan ? 'font-semibold cursor-not-allowed text-slate-600' : '' }}"
+                        class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 {{ $isKaryawan ? 'font-semibold cursor-not-allowed text-slate-600 dark:text-slate-400 bg-slate-100/90 dark:bg-slate-800/90 select-none' : '' }}"
                         {{ $isKaryawan ? 'readonly' : '' }}
                         required
                     />
@@ -425,48 +425,48 @@
                 </div>
 
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Departemen</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Departemen</label>
                     <input
                         wire:model="requestor_department"
                         type="text"
                         placeholder="Nama Departemen"
-                        class="input input-bordered w-full rounded-lg text-sm text-slate-600 bg-slate-50/80 {{ ($isKaryawan && $isDepartmentLocked) ? 'font-semibold cursor-not-allowed text-slate-600 bg-slate-100/90 select-none' : 'focus:bg-white focus:border-primary-500' }}"
+                        class="input input-bordered w-full rounded-lg text-sm border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 {{ ($isKaryawan && $isDepartmentLocked) ? 'font-semibold cursor-not-allowed text-slate-600 dark:text-slate-400 bg-slate-100/90 dark:bg-slate-800/90 select-none' : 'bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 focus:border-primary-500' }}"
                         {{ ($isKaryawan && $isDepartmentLocked) ? 'readonly' : '' }}
                     />
                     @error('requestor_department') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Jabatan</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Jabatan</label>
                     <input
                         wire:model="requestor_position"
                         type="text"
                         placeholder="Jabatan"
-                        class="input input-bordered w-full rounded-lg text-sm text-slate-600 bg-slate-50/80 {{ ($isKaryawan && $isPositionLocked) ? 'font-semibold cursor-not-allowed text-slate-600 bg-slate-100/90 select-none' : 'focus:bg-white focus:border-primary-500' }}"
+                        class="input input-bordered w-full rounded-lg text-sm border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 {{ ($isKaryawan && $isPositionLocked) ? 'font-semibold cursor-not-allowed text-slate-600 dark:text-slate-400 bg-slate-100/90 dark:bg-slate-800/90 select-none' : 'bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 focus:border-primary-500' }}"
                         {{ ($isKaryawan && $isPositionLocked) ? 'readonly' : '' }}
                     />
                     @error('requestor_position') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Email</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Email</label>
                     <input
                         wire:model="requestor_email"
                         type="email"
                         placeholder="example@gmail.com"
-                        class="input input-bordered w-full rounded-lg text-sm {{ $isEmailLocked ? 'font-semibold cursor-not-allowed text-slate-600 bg-slate-100/90 border-slate-200 select-none' : 'focus:border-primary-500 bg-slate-50/80 focus:bg-white' }}"
+                        class="input input-bordered w-full rounded-lg text-sm {{ $isEmailLocked ? 'font-semibold cursor-not-allowed text-slate-600 dark:text-slate-400 bg-slate-100/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 select-none' : 'focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100' }}"
                         {{ $isEmailLocked ? 'readonly' : '' }}
                     />
                     @error('requestor_email') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">No. Telepon / WhatsApp</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">No. Telepon / WhatsApp</label>
                     <input
                         wire:model="requestor_phone"
                         type="text"
                         placeholder="08..."
-                        class="input input-bordered w-full rounded-lg text-sm font-mono {{ $isPhoneLocked ? 'font-semibold cursor-not-allowed text-slate-600 bg-slate-100/90 border-slate-200 select-none' : 'focus:border-primary-500 bg-slate-50/80 focus:bg-white' }}"
+                        class="input input-bordered w-full rounded-lg text-sm font-mono {{ $isPhoneLocked ? 'font-semibold cursor-not-allowed text-slate-600 dark:text-slate-400 bg-slate-100/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 select-none' : 'focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100' }}"
                         {{ $isPhoneLocked ? 'readonly' : '' }}
                     />
                     @error('requestor_phone') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
@@ -496,13 +496,13 @@
     </form>
 
     <!-- Success Modal Popup -->
-    <div class="modal {{ $showSuccessModal ? 'modal-open' : '' }} z-[100] backdrop-blur-md bg-slate-900/40" role="dialog">
-        <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 p-6 sm:p-8 text-center space-y-5 shadow-2xl bg-white relative">
+    <div class="modal {{ $showSuccessModal ? 'modal-open' : '' }} z-[100] backdrop-blur-md bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
+        <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 text-center space-y-5 shadow-2xl bg-white dark:bg-slate-900 relative">
             <!-- Close Button Corner -->
             <button
                 type="button"
                 wire:click="closeSuccessModal"
-                class="btn btn-sm sm:btn-md btn-circle btn-ghost absolute right-3.5 top-3.5 sm:right-4 sm:top-4 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                class="btn btn-sm sm:btn-md btn-circle btn-ghost absolute right-3.5 top-3.5 sm:right-4 sm:top-4 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title="Tutup Modal"
                 aria-label="Tutup"
             >
@@ -512,28 +512,28 @@
             </button>
 
             <!-- Icon -->
-            <div class="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 border border-primary-200 flex items-center justify-center mx-auto shadow-2xs">
+            <div class="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800/60 flex items-center justify-center mx-auto shadow-2xs">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                 </svg>
             </div>
 
             <div class="space-y-1">
-                <span class="badge badge-success badge-soft font-bold text-emerald-800 uppercase tracking-wider px-3 py-1 rounded-md text-xs">Berhasil Diterbitkan</span>
-                <h3 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mt-1">Nomor Surat Siap Digunakan</h3>
+                <span class="badge badge-success badge-soft font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider px-3 py-1 rounded-md text-xs">Berhasil Diterbitkan</span>
+                <h3 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white mt-1">Nomor Surat Siap Digunakan</h3>
             </div>
 
             @if($createdLetter)
-                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Nomor Surat:</div>
-                    <div class="font-mono font-black text-2xl sm:text-3xl text-primary-600 tracking-wider break-all select-all py-1">
+                <div class="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-3">
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Nomor Surat:</div>
+                    <div class="font-mono font-black text-2xl sm:text-3xl text-primary-600 dark:text-primary-400 tracking-wider break-all select-all py-1">
                         {{ $createdLetter->reference_number }}
                     </div>
-                    <div class="divider my-1 border-slate-200"></div>
-                    <div class="text-xs text-left space-y-1.5 text-slate-600">
-                        <p><strong class="text-slate-900">Perihal:</strong> {{ $createdLetter->subject }}</p>
-                        <p><strong class="text-slate-900">Tujuan:</strong> {{ $createdLetter->target_code }}</p>
-                        <p><strong class="text-slate-900">Pemohon:</strong> {{ $createdLetter->requestor_name }} ({{ $createdLetter->branch_code }})</p>
+                    <div class="divider my-1 border-slate-200 dark:border-slate-700/60"></div>
+                    <div class="text-xs text-left space-y-1.5 text-slate-600 dark:text-slate-300">
+                        <p><strong class="text-slate-900 dark:text-white">Perihal:</strong> {{ $createdLetter->subject }}</p>
+                        <p><strong class="text-slate-900 dark:text-white">Tujuan:</strong> {{ $createdLetter->target_code }}</p>
+                        <p><strong class="text-slate-900 dark:text-white">Pemohon:</strong> {{ $createdLetter->requestor_name }} ({{ $createdLetter->branch_code }})</p>
                     </div>
                 </div>
 
@@ -549,8 +549,8 @@
                         <span x-text="copiedSuccess ? '✓ Nomor Tersalin!' : 'Salin Nomor Surat'">Salin Nomor Surat</span>
                     </button>
 
-                    <a href="{{ route('letter.history') }}" wire:navigate class="btn btn-outline border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl flex-1 h-12 text-sm sm:text-base shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href="{{ route('letter.history') }}" wire:navigate class="btn btn-outline border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex-1 h-12 text-sm sm:text-base shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <span>Lihat Riwayat</span>
@@ -558,8 +558,8 @@
                 </div>
             @endif
 
-            <div class="modal-action justify-center pt-2 border-t border-slate-100">
-                <button type="button" wire:click="createAnother" class="btn btn-ghost btn-sm sm:btn-md text-xs sm:text-sm font-bold text-slate-500 hover:text-primary-600 hover:bg-slate-50 rounded-xl px-4 cursor-pointer">
+            <div class="modal-action justify-center pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" wire:click="createAnother" class="btn btn-ghost btn-sm sm:btn-md text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl px-4 cursor-pointer">
                     + Buat Nomor Surat Lainnya
                 </button>
             </div>
