@@ -4,12 +4,14 @@ namespace App\Livewire;
 
 use App\Models\Absen\Cabang;
 use App\Models\Letter;
+use App\Services\LetterImportService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -17,6 +19,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Title('Riwayat Nomor Surat')]
 class LetterHistory extends Component
 {
+    use WithFileUploads;
     use WithPagination;
 
     public bool $isKaryawan = false;
@@ -41,6 +44,14 @@ class LetterHistory extends Component
     public ?Letter $selectedLetter = null;
 
     public bool $showDetailModal = false;
+
+    public bool $showImportModal = false;
+
+    /** @var mixed */
+    public $csvFile = null;
+
+    /** @var array<string, mixed> */
+    public array $importResult = [];
 
     public function mount(): void
     {
@@ -107,6 +118,53 @@ class LetterHistory extends Component
     {
         $this->showDetailModal = false;
         $this->selectedLetter = null;
+    }
+
+    public function openImportModal(): void
+    {
+        if (! $this->isAdmin) {
+            abort(403, 'Hanya administrator yang dapat mengimpor file CSV.');
+        }
+
+        $this->reset(['csvFile', 'importResult']);
+        $this->resetValidation('csvFile');
+        $this->showImportModal = true;
+    }
+
+    public function closeImportModal(): void
+    {
+        $this->showImportModal = false;
+        $this->reset(['csvFile', 'importResult']);
+        $this->resetValidation('csvFile');
+    }
+
+    public function importCsv(LetterImportService $service): void
+    {
+        if (! $this->isAdmin) {
+            abort(403, 'Hanya administrator yang dapat mengimpor file CSV.');
+        }
+
+        $this->validate([
+            'csvFile' => 'required|file|mimes:csv,txt|max:10240',
+        ], [
+            'csvFile.required' => 'Pilih file CSV yang ingin diimport.',
+            'csvFile.file' => 'File tidak valid.',
+            'csvFile.mimes' => 'Format file harus berupa CSV (.csv) atau TXT (.txt).',
+            'csvFile.max' => 'Ukuran file maksimal adalah 10 MB.',
+        ]);
+
+        $path = $this->csvFile->getRealPath();
+        $result = $service->importFromPath($path, false);
+        $this->importResult = $result;
+
+        $this->dispatch('toast', [
+            'type' => $result['success'] ? 'success' : 'warning',
+            'title' => 'Import CSV Selesai',
+            'message' => "Berhasil mengimpor {$result['imported_count']} nomor surat.",
+        ]);
+
+        $this->resetPage();
+        $this->reset('csvFile');
     }
 
     public function exportCsv(): StreamedResponse

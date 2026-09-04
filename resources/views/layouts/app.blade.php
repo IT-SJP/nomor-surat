@@ -237,18 +237,18 @@
             </a>
         @endif
 
-        <a href="{{ route('letter.request') }}" wire:navigate class="{{ request()->routeIs('letter.request') ? 'dock-active text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-400 dark:text-slate-500' }} flex flex-col items-center py-1 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span class="dock-label text-[10px] mt-0.5 font-medium">Nomor Surat</span>
-        </a>
-
         <a href="{{ route('letter.history') }}" wire:navigate class="{{ request()->routeIs('letter.history') ? 'dock-active text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-400 dark:text-slate-500' }} flex flex-col items-center py-1 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <span class="dock-label text-[10px] mt-0.5 font-medium">Riwayat</span>
+        </a>
+
+        <a href="{{ route('letter.request') }}" wire:navigate class="{{ request()->routeIs('letter.request') ? 'dock-active text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-400 dark:text-slate-500' }} flex flex-col items-center py-1 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span class="dock-label text-[10px] mt-0.5 font-medium">Nomor Surat</span>
         </a>
 
         @if ($isAdmin)

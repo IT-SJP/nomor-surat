@@ -7,25 +7,31 @@
             </h1>
         </div>
 
-        <div class="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full sm:w-auto shrink-0">
+        <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0">
+            @if($isAdmin)
+                <button
+                    type="button"
+                    wire:click="openImportModal"
+                    class="btn btn-outline btn-md rounded-lg gap-2 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 border-slate-200 dark:border-slate-700 text-xs sm:text-sm cursor-pointer flex-1 sm:flex-initial justify-center px-2.5 sm:px-4"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <span>Import CSV</span>
+                </button>
+            @endif
+
             <button
                 type="button"
                 wire:click="exportCsv"
                 @click="window.showToast('info', 'Sedang memproses dan mengunduh berkas CSV...', 'Unduh CSV')"
-                class="btn btn-outline btn-md rounded-lg gap-2 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 border-slate-200 dark:border-slate-700 text-xs sm:text-sm cursor-pointer w-full sm:w-auto justify-center px-2.5 sm:px-4"
+                class="btn btn-primary btn-md rounded-lg text-white font-bold gap-2 shadow-md shadow-primary-600/20 text-xs sm:text-sm flex-1 sm:flex-initial justify-center px-2.5 sm:px-4 whitespace-nowrap cursor-pointer"
             >
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 <span>Unduh CSV</span>
             </button>
-
-            <a href="{{ route('letter.request') }}" wire:navigate class="btn btn-primary btn-md rounded-lg text-white font-bold gap-2 shadow-md shadow-primary-600/20 text-xs sm:text-sm w-full sm:w-auto justify-center px-2.5 sm:px-4 whitespace-nowrap">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Buat Nomor Surat</span>
-            </a>
         </div>
     </div>
 
@@ -347,4 +353,109 @@
             <button class="cursor-default">close</button>
         </div>
     </div>
+
+    {{-- Modal Import CSV (Admin Only) --}}
+    @if($isAdmin)
+        <div class="modal {{ $showImportModal ? 'modal-open' : '' }} backdrop-blur-xs bg-slate-900/40" role="dialog">
+            <div class="modal-box bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg shadow-2xl transition-all">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center gap-2.5">
+                        <div>
+                            <h3 class="text-lg font-extrabold text-base text-slate-900 dark:text-white">Import Riwayat Nomor Surat</h3>
+                        </div>
+                    </div>
+                    <button type="button" wire:click="closeImportModal" class="btn btn-ghost btn-sm btn-square rounded-md text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors" title="Tutup Modal" aria-label="Tutup">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form wire:submit="importCsv" class="mt-4 space-y-4">
+                    <!-- Info Box Format -->
+                    <div class="bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/50 rounded-2xl p-3.5 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
+                        <p class="font-bold text-primary-800 dark:text-primary-300 flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Pedoman Kolom Header CSV:
+                        </p>
+                        <p class="text-[11px] font-mono leading-relaxed text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-primary-200/50 dark:border-primary-800/40 select-all">
+                            No, Timestamp, Nomor Surat, Kode Perusahaan, Kode Tujuan, Bulan, Tahun, Perihal, Tujuan, Letak Arsip, Requestor
+                        </p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                            Nomor surat akan digenerate otomatis dengan format: <p><strong class="text-primary-700 dark:text-primary-300">[No]/[Tujuan]/[Cabang]/[Bulan]/[Tahun]</strong></p>
+                        </p>
+                    </div>
+
+                    <!-- File Input Area -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            Pilih File CSV (.csv, .txt, maks. 10MB)
+                        </label>
+                        <input 
+                            type="file" 
+                            wire:model="csvFile" 
+                            accept=".csv,.txt"
+                            class="file-input file-input-bordered file-input-primary w-full rounded-xl bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-xs"
+                        />
+                        @error('csvFile')
+                            <p class="text-xs font-semibold text-red-500 mt-1">{{ $message }}</p>
+                        @enderror
+
+                        <div wire:loading wire:target="csvFile" class="text-xs text-primary-600 dark:text-primary-400 flex items-center gap-2 pt-1">
+                            <span class="loading loading-spinner loading-xs"></span>
+                            <span>Mengunggah berkas ke server...</span>
+                        </div>
+                    </div>
+
+                    <!-- Import Result Summary (if any) -->
+                    @if(!empty($importResult))
+                        <div class="p-3.5 rounded-2xl {{ ($importResult['success'] ?? false) ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200' : 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200' }} text-xs space-y-1">
+                            <p class="font-bold flex items-center gap-1.5">
+                                @if($importResult['success'] ?? false)
+                                    <span>✓ Berhasil mengimpor {{ $importResult['imported_count'] }} nomor surat!</span>
+                                @else
+                                    <span>Perhatian: {{ $importResult['imported_count'] }} diimpor, {{ $importResult['skipped_count'] }} dilewati.</span>
+                                @endif
+                            </p>
+                            @if(!empty($importResult['errors']))
+                                <div class="max-h-28 overflow-y-auto text-[11px] text-red-600 dark:text-red-400 mt-1 pl-2 border-l-2 border-red-300">
+                                    @foreach(array_slice($importResult['errors'], 0, 5) as $err)
+                                        <p>{{ $err }}</p>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    <!-- Modal Actions -->
+                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button 
+                            type="button" 
+                            wire:click="closeImportModal" 
+                            class="btn btn-ghost btn-sm rounded-md text-xs font-bold text-slate-500 dark:text-slate-400"
+                        >
+                            Tutup
+                        </button>
+                        <button 
+                            type="submit" 
+                            wire:loading.attr="disabled"
+                            wire:target="importCsv, csvFile"
+                            class="btn btn-primary btn-sm rounded-md text-white text-xs font-bold shadow-md shadow-primary-600/20 px-4 flex items-center gap-1.5"
+                        >
+                            <span wire:loading.remove wire:target="importCsv">Mulai Import</span>
+                            <span wire:loading wire:target="importCsv" class="flex items-center gap-1.5">
+                                <span class="loading loading-spinner loading-xs"></span>
+                                <span>Memproses data...</span>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-backdrop bg-transparent" wire:click="closeImportModal">
+                <button class="cursor-default">close</button>
+            </div>
+        </div>
+    @endif
 </div>
