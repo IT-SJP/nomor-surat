@@ -6,6 +6,7 @@ use App\Models\Absen\Cabang;
 use App\Models\Absen\Karyawan;
 use App\Models\Branch;
 use App\Models\Letter;
+use App\Models\LetterTarget;
 use App\Services\LetterNumberService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -60,7 +61,7 @@ class LetterRequestForm extends Component
     #[Validate('required|string|min:3|max:255')]
     public string $subject = '';
 
-    #[Validate('required|string|min:3')]
+    #[Validate('nullable|string|max:1000')]
     public string $purpose = '';
 
     #[Validate('nullable|string|max:255')]
@@ -248,7 +249,7 @@ class LetterRequestForm extends Component
             'month' => $this->month,
             'year' => $this->year,
             'subject' => $this->subject,
-            'purpose' => $this->purpose,
+            'purpose' => $this->purpose ?: null,
             'archive_location' => $this->archive_location,
             'requestor_department' => $this->requestor_department,
             'requestor_position' => $this->requestor_position,
@@ -281,18 +282,86 @@ class LetterRequestForm extends Component
         $this->showSuccessModal = false;
     }
 
+    public function updatedTargetCode(): void
+    {
+        $this->resetValidation('target_code');
+    }
+
+    public function updatedSubject(): void
+    {
+        $this->resetValidation('subject');
+    }
+
+    public function updatedRequestorName(): void
+    {
+        $this->resetValidation('requestor_name');
+    }
+
+    public function selectTarget(string $codeOrFormatted, ?string $name = null): void
+    {
+        if ($name) {
+            $this->target_code = "{$codeOrFormatted} - {$name}";
+        } elseif (str_contains($codeOrFormatted, ' - ')) {
+            $this->target_code = $codeOrFormatted;
+        } else {
+            $target = LetterTarget::where('code', $codeOrFormatted)->first();
+            $this->target_code = $target ? "{$target->code} - {$target->name}" : $codeOrFormatted;
+        }
+
+        $this->resetValidation('target_code');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        return [
+            'target_code.required' => 'Tujuan / instansi penerima surat wajib diisi.',
+            'target_code.min' => 'Tujuan / instansi penerima surat minimal 2 karakter.',
+            'target_code.max' => 'Tujuan / instansi penerima surat maksimal 100 karakter.',
+            'branch_code.required' => 'Cabang surat wajib dipilih.',
+            'subject.required' => 'Perihal surat wajib diisi.',
+            'subject.min' => 'Perihal surat minimal 3 karakter.',
+            'requestor_name.required' => 'Nama pemohon surat wajib diisi.',
+            'month.required' => 'Bulan surat wajib dipilih.',
+            'year.required' => 'Tahun surat wajib dipilih.',
+            'requestor_email.email' => 'Format email pemohon tidak valid.',
+        ];
+    }
+
     public function render(LetterNumberService $service): View
     {
         /** @var Collection<int, array{id: int|string|null, code: string, name: string}> $branches */
         $branches = Cabang::getActiveBranches();
 
         $previewNumber = $this->branch_code && $this->month && $this->year
-            ? $service->previewNextNumber($this->branch_code, $this->month, $this->year)
+            ? $service->previewNextNumber($this->branch_code, $this->month, $this->year, $this->target_code)
             : '-';
+
+        $matchedTarget = LetterTarget::findMatching($this->target_code);
+
+        $targetQuery = LetterTarget::active()->orderBy('name');
+        $trimmedSearch = trim($this->target_code);
+
+        if ($trimmedSearch !== '') {
+            $search = str_contains($trimmedSearch, '-') ? trim(explode('-', $trimmedSearch, 2)[0]) : $trimmedSearch;
+            $operator = LetterTarget::query()->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $filtered = (clone $targetQuery)->where(function ($q) use ($search, $operator) {
+                $q->where('code', $operator, "%{$search}%")
+                    ->orWhere('name', $operator, "%{$search}%");
+            })->get();
+
+            $standardTargets = $filtered->isNotEmpty() ? $filtered : $targetQuery->get();
+        } else {
+            $standardTargets = $targetQuery->get();
+        }
 
         return view('livewire.letter-request-form', [
             'branches' => $branches,
             'previewNumber' => $previewNumber,
+            'matchedTarget' => $matchedTarget,
+            'standardTargets' => $standardTargets,
             'romanMonths' => LetterNumberService::ROMAN_MONTHS,
             'monthNames' => LetterNumberService::MONTH_NAMES,
         ]);

@@ -33,18 +33,18 @@
         <div class="relative z-10 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
-                    <span wire:loading.remove wire:target="branch_code, month, year" class="relative flex h-2.5 w-2.5">
+                    <span wire:loading.remove wire:target="branch_code, month, year, target_code" class="relative flex h-2.5 w-2.5">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
                     </span>
-                    <span wire:loading wire:target="branch_code, month, year" class="loading loading-spinner loading-xs text-emerald-400"></span>
-                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-300">Live Preview Nomor Registrasi Berikutnya</span>
+                    <span wire:loading wire:target="branch_code, month, year, target_code" class="loading loading-spinner loading-xs text-emerald-400"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-300">Live Preview Nomor Surat Berikutnya</span>
                 </div>
             </div>
 
             <!-- Big Monospace Number Display -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/25 p-4 sm:p-5 rounded-2xl border border-white/10 backdrop-blur-md">
-                <div wire:loading.class="opacity-50 animate-sjp-pulse" wire:target="branch_code, month, year" class="font-mono font-bold text-2xl sm:text-3xl lg:text-4xl text-emerald-300 tracking-wider select-all break-all drop-shadow-sm transition-opacity">
+                <div wire:loading.class="opacity-50 animate-sjp-pulse" wire:target="branch_code, month, year, target_code" class="font-mono font-bold text-2xl sm:text-3xl lg:text-4xl text-emerald-300 tracking-wider select-all break-all drop-shadow-sm transition-opacity">
                     {{ $previewNumber }}
                 </div>
 
@@ -105,27 +105,73 @@
                 </div>
 
                 <!-- Tujuan / Penerima -->
-                <div class="md:col-span-6 space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                        Tujuan / Instansi / Penerima <span class="text-rose-500">*</span>
-                    </label>
-                    <input
-                        wire:model="target_code"
-                        type="text"
-                        placeholder="Contoh: Dinas ESDM / Bank Mandiri / Internal Memo"
-                        class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
-                        required
-                    />
-                    @error('target_code') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
-
-                    <!-- Fast suggestion chips -->
-                    <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span class="text-[10px] text-slate-400 font-medium">Cepat:</span>
-                        <button type="button" @click="setTarget('Internal Memo')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Internal Memo</button>
-                        <button type="button" @click="setTarget('Dinas ESDM')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Dinas ESDM</button>
-                        <button type="button" @click="setTarget('Perbankan')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Perbankan</button>
-                        <button type="button" @click="setTarget('Vendor / Supplier')" class="badge badge-primary badge-soft hover:bg-primary-600 hover:text-white text-[10px] font-semibold cursor-pointer py-1 px-2 rounded-md transition-all">Vendor</button>
+                <div class="md:col-span-6 space-y-1.5" x-data="{ openTargetSuggest: false }" @click.outside="openTargetSuggest = false">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Tujuan / Instansi / Penerima <span class="text-rose-500">*</span>
+                        </label>
                     </div>
+
+                    <div class="relative">
+                        <input
+                            wire:model.live.debounce.150ms="target_code"
+                            @focus="openTargetSuggest = true"
+                            @click="openTargetSuggest = true"
+                            type="text"
+                            placeholder="Contoh: Internal Memo / Bank Mandiri"
+                            class="input input-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white pr-10"
+                            autocomplete="off"
+                            required
+                        />
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-1">
+                            <span wire:loading wire:target="target_code">
+                                <span class="loading loading-spinner loading-xs text-primary-600"></span>
+                            </span>
+                            @if(!empty($target_code))
+                                <button type="button" wire:click="$set('target_code', '')" class="text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            @endif
+                        </div>
+
+                        <!-- Autocomplete Suggestion Dropdown -->
+                        <div
+                            x-show="openTargetSuggest"
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 translate-y-1"
+                            class="absolute top-full left-0 right-0 z-40 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden"
+                            style="display: none;"
+                        >
+                            <div class="p-1.5 max-h-56 overflow-y-auto divide-y divide-slate-100">
+                                <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Pilihan Tujuan Baku Terdaftar:
+                                </div>
+                                @foreach($standardTargets as $st)
+                                    <button
+                                        type="button"
+                                        wire:click="selectTarget('{{ $st->code }}', '{{ addslashes($st->name) }}')"
+                                        @click="openTargetSuggest = false"
+                                        class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-primary-50/80 transition-colors text-left group cursor-pointer"
+                                    >
+                                        <div class="flex items-center gap-2">
+                                            <span class="badge badge-primary badge-outline badge-sm font-mono font-bold">{{ $st->code }}</span>
+                                            <span class="text-xs font-semibold text-slate-800 group-hover:text-primary-700">{{ $st->name }}</span>
+                                        </div>
+                                        @if($st->description)
+                                            <span class="text-[11px] text-slate-400 truncate max-w-[140px]">{{ $st->description }}</span>
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @error('target_code') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Bulan & Tahun -->
@@ -201,14 +247,13 @@
                 <!-- Keperluan / Keterangan -->
                 <div class="space-y-1.5">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                        Keperluan / Keterangan <span class="text-rose-500">*</span>
+                        Keperluan / Keterangan
                     </label>
                     <textarea
                         wire:model="purpose"
                         rows="3"
-                        placeholder="Jelaskan secara ringkas peruntukan atau isi surat keluar yang diajukan..."
+                        placeholder="Jelaskan secara ringkas peruntukan atau isi surat keluar..."
                         class="textarea textarea-bordered w-full rounded-lg text-sm focus:border-primary-500 bg-slate-50/80 focus:bg-white"
-                        required
                     ></textarea>
                     @error('purpose') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                 </div>
@@ -476,7 +521,6 @@
             <div class="space-y-1">
                 <span class="badge badge-success badge-soft font-bold text-emerald-800 uppercase tracking-wider px-3 py-1 rounded-md text-xs">Berhasil Diterbitkan</span>
                 <h3 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mt-1">Nomor Surat Siap Digunakan</h3>
-                <p class="text-xs text-slate-500">Nomor surat telah tersimpan secara resmi di database.</p>
             </div>
 
             @if($createdLetter)

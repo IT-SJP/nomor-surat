@@ -83,12 +83,6 @@ class LetterHistory extends Component
             $this->branch = $this->userBranch;
         }
         $this->resetPage();
-
-        $this->dispatch('toast', [
-            'type' => 'info',
-            'title' => 'Filter Direset',
-            'message' => 'Parameter pencarian telah dikembalikan ke semula.',
-        ]);
     }
 
     public function viewLetter(int $id): void
@@ -159,7 +153,7 @@ class LetterHistory extends Component
                     $item->month_roman,
                     $item->year,
                     $item->subject,
-                    $item->purpose,
+                    $item->purpose ?: '-',
                     $item->archive_location ?? '-',
                     $item->requestor_name,
                     $item->requestor_email ?? '-',

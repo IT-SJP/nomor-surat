@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Letter;
+use App\Models\LetterTarget;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -86,9 +87,10 @@ class LetterNumberService
      *     month: int,
      *     year: int,
      *     subject: string,
-     *     purpose: string,
+     *     purpose?: string|null,
      *     archive_location?: string|null,
-     *     requestor_nik?: string|null,
+     *     requestor_department?: string|null,
+     *     requestor_position?: string|null,
      *     requestor_name: string,
      *     requestor_email?: string|null,
      *     requestor_phone?: string|null
@@ -98,7 +100,10 @@ class LetterNumberService
     {
         return DB::transaction(function () use ($data) {
             $branchCode = strtoupper(trim($data['branch_code']));
-            $targetCode = strtoupper(trim($data['target_code']));
+            $rawTarget = trim($data['target_code']);
+            $targetCode = (! str_contains($rawTarget, ' ') && strlen($rawTarget) <= 10)
+                ? strtoupper($rawTarget)
+                : $rawTarget;
             $month = (int) $data['month'];
             $year = (int) $data['year'];
             $monthRoman = self::monthToRoman($month);
@@ -114,7 +119,14 @@ class LetterNumberService
 
             $nextSequence = ($latestLetter ? $latestLetter->sequence_number : 0) + 1;
             $paddedSequence = str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
-            $referenceNumber = "{$branchCode}/{$monthRoman}/{$year}/{$paddedSequence}";
+
+            // Format nomor surat dibalik:
+            // 1. Jika tujuan cocok dengan database tujuan baku: nomor/tujuan/cabang/bulan/tahun (e.g. 001/IM/SJP/IX/2026)
+            // 2. Jika tujuan di luar database: nomor/cabang/bulan/tahun (e.g. 001/SJP/IX/2026)
+            $matchedTarget = LetterTarget::findMatching($targetCode);
+            $referenceNumber = $matchedTarget
+                ? "{$paddedSequence}/{$matchedTarget->code}/{$branchCode}/{$monthRoman}/{$year}"
+                : "{$paddedSequence}/{$branchCode}/{$monthRoman}/{$year}";
 
             return Letter::create([
                 'reference_number' => $referenceNumber,
@@ -126,12 +138,13 @@ class LetterNumberService
                 'month' => $month,
                 'year' => $year,
                 'subject' => trim($data['subject']),
-                'purpose' => trim($data['purpose']),
-                'archive_location' => isset($data['archive_location']) ? trim($data['archive_location']) : null,
-                'requestor_nik' => isset($data['requestor_nik']) ? trim($data['requestor_nik']) : null,
+                'purpose' => ! empty($data['purpose']) ? trim((string) $data['purpose']) : null,
+                'archive_location' => ! empty($data['archive_location']) ? trim((string) $data['archive_location']) : null,
+                'requestor_department' => ! empty($data['requestor_department']) ? trim((string) $data['requestor_department']) : null,
+                'requestor_position' => ! empty($data['requestor_position']) ? trim((string) $data['requestor_position']) : null,
                 'requestor_name' => trim($data['requestor_name']),
-                'requestor_email' => isset($data['requestor_email']) ? trim($data['requestor_email']) : null,
-                'requestor_phone' => isset($data['requestor_phone']) ? trim($data['requestor_phone']) : null,
+                'requestor_email' => ! empty($data['requestor_email']) ? trim((string) $data['requestor_email']) : null,
+                'requestor_phone' => ! empty($data['requestor_phone']) ? trim((string) $data['requestor_phone']) : null,
             ]);
         });
     }
@@ -139,7 +152,7 @@ class LetterNumberService
     /**
      * Preview the next available letter number for a given branch, month, and year.
      */
-    public function previewNextNumber(string $branchCode, int $month, int $year): string
+    public function previewNextNumber(string $branchCode, int $month, int $year, ?string $targetInput = null): string
     {
         $branchCode = strtoupper(trim($branchCode));
         $monthRoman = self::monthToRoman($month);
@@ -151,8 +164,11 @@ class LetterNumberService
             ->max('sequence_number') ?? 0;
 
         $nextSeq = str_pad((string) ($maxSeq + 1), 3, '0', STR_PAD_LEFT);
+        $matchedTarget = LetterTarget::findMatching($targetInput);
 
-        return "{$branchCode}/{$monthRoman}/{$year}/{$nextSeq}";
+        return $matchedTarget
+            ? "{$nextSeq}/{$matchedTarget->code}/{$branchCode}/{$monthRoman}/{$year}"
+            : "{$nextSeq}/{$branchCode}/{$monthRoman}/{$year}";
     }
 
     /**

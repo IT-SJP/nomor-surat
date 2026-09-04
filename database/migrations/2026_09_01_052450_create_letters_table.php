@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('month');
             $table->unsignedSmallInteger('year');
             $table->string('subject');
-            $table->text('purpose');
+            $table->text('purpose')->nullable();
             $table->string('archive_location')->nullable();
             $table->string('requestor_department')->nullable();
             $table->string('requestor_position')->nullable();

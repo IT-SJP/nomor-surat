@@ -157,10 +157,10 @@ class SsoAuthController extends Controller
         session()->regenerate();
 
         if ($payload['role'] === 'karyawan') {
-            return redirect()->route('letter.request')->with('status', 'Selamat datang, '.($payload['name'] ?? 'Karyawan').'!');
+            return redirect()->route('letter.request');
         }
 
-        return redirect()->route('dashboard')->with('status', 'Login Admin Absenku SJP berhasil!');
+        return redirect()->route('dashboard');
     }
 
     /**

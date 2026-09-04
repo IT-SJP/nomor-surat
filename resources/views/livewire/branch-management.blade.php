@@ -3,7 +3,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Pengaturan Cabang & Kode Surat</h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">Kelola data cabang yang tersinkron dari absenkusjp.com dan sesuaikan kode surat resmi masing-masing.</p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Kelola data cabang dan sesuaikan kode surat resmi masing-masing.</p>
         </div>
     </div>
 
@@ -84,11 +84,14 @@
                                 @enderror
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <label class="cursor-pointer label justify-start gap-2.5 py-0">
-                                    <input 
-                                        type="checkbox" 
-                                        class="toggle toggle-primary toggle-sm cursor-pointer" 
-                                        @click.prevent="
+                                <div class="inline-flex items-center justify-start gap-2">
+                                    <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked="{{ $branch->is_active ? 'true' : 'false' }}"
+                                        wire:loading.attr="disabled"
+                                        wire:target="toggleActive({{ $branch->id }})"
+                                        @click="
                                             if ({{ $branch->is_active ? 'true' : 'false' }}) {
                                                 window.confirmAction({
                                                     title: 'Nonaktifkan Cabang?',
@@ -105,12 +108,18 @@
                                                 $wire.toggleActive({{ $branch->id }});
                                             }
                                         "
-                                        {{ $branch->is_active ? 'checked' : '' }} 
-                                    />
-                                    <span class="label-text text-xs font-bold {{ $branch->is_active ? 'text-primary-600' : 'text-slate-400' }}">
+                                        class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none {{ $branch->is_active ? 'bg-primary-600' : 'bg-slate-300' }} disabled:opacity-50"
+                                        title="Klik untuk {{ $branch->is_active ? 'menonaktifkan' : 'mengaktifkan' }} status"
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            class="pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out m-[3px] {{ $branch->is_active ? 'translate-x-4' : 'translate-x-0' }}"
+                                        ></span>
+                                    </button>
+                                    <span class="text-[11px] font-bold w-12 text-left select-none {{ $branch->is_active ? 'text-primary-600' : 'text-slate-400' }}">
                                         {{ $branch->is_active ? 'Aktif' : 'Nonaktif' }}
                                     </span>
-                                </label>
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <button type="button" 
@@ -143,7 +152,6 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-inbox-off"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 4h10a2 2 0 0 1 2 2v10m-.593 3.422a2 2 0 0 1 -1.407 .578h-12a2 2 0 0 1 -2 -2v-12c0 -.554 .225 -1.056 .59 -1.418" /><path d="M4 13h3l3 3h4l.987 -.987m2.013 -2.013h3" /><path d="M3 3l18 18" /></svg>
                                 </div>
                                 <p class="font-bold text-sm text-slate-900">Belum ada data cabang</p>
-                                <p class="text-xs text-slate-500 mt-0.5">Data cabang akan otomatis tersinkron dari absenkusjp.com</p>
                             </td>
                         </tr>
                     @endforelse

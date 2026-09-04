@@ -232,7 +232,9 @@
                             </td>
                             <td class="px-6 py-4 max-w-xs">
                                 <p class="font-bold text-slate-900 line-clamp-1 text-xs sm:text-sm">{{ $letter->subject }}</p>
-                                <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{{ $letter->purpose }}</p>
+                                @if($letter->purpose)
+                                    <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{{ $letter->purpose }}</p>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="font-semibold text-slate-700">{{ $letter->target_code }}</span>
@@ -286,10 +288,9 @@
         <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 p-6 sm:p-7 space-y-5 shadow-2xl bg-white" x-data="{ copiedDetail: false }">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2">
-                    <span class="badge badge-primary badge-soft badge-sm font-bold rounded-md">Arsip Resmi</span>
                     <h3 class="font-extrabold text-base sm:text-lg text-slate-900">Detail Nomor Surat</h3>
                 </div>
-                <button type="button" wire:click="closeDetailModal" class="btn btn-ghost btn-sm btn-circle text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" title="Tutup Modal" aria-label="Tutup">
+                <button type="button" wire:click="closeDetailModal" class="btn btn-ghost btn-sm btn-square rounded-md text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors" title="Tutup Modal" aria-label="Tutup">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -299,11 +300,11 @@
             @if($selectedLetter)
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
                     <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor Registrasi:</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor Surat:</span>
                         <button
                             type="button"
                             class="btn btn-primary btn-xs text-white font-bold rounded-md shadow-2xs cursor-pointer"
-                            @click="window.copyToClipboard('{{ $selectedLetter->reference_number }}', 'Nomor Registrasi Surat'); copiedDetail = true; setTimeout(() => copiedDetail = false, 2500)"
+                            @click="window.copyToClipboard('{{ $selectedLetter->reference_number }}', 'Nomor Surat'); copiedDetail = true; setTimeout(() => copiedDetail = false, 2500)"
                         >
                             <span x-text="copiedDetail ? '✓ Tersalin' : 'Salin Nomor'">Salin Nomor</span>
                         </button>
@@ -316,7 +317,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div class="bg-slate-50/60 p-3 rounded-2xl border border-slate-200/80">
                         <p class="text-slate-400 font-semibold text-[10px] uppercase">Cabang / Entitas</p>
-                        <p class="font-bold mt-0.5 text-slate-900">{{ $selectedLetter->branch_code }} &mdash; {{ $selectedLetter->branch_name ?? 'SJP Group' }}</p>
+                        <p class="font-bold mt-0.5 text-slate-900">{{ $selectedLetter->branch_name ?? 'SJP Group' }}</p>
                     </div>
                     <div class="bg-slate-50/60 p-3 rounded-2xl border border-slate-200/80">
                         <p class="text-slate-400 font-semibold text-[10px] uppercase">Tujuan / Instansi</p>
@@ -328,7 +329,7 @@
                     </div>
                     <div class="bg-slate-50/60 p-3 rounded-2xl border border-slate-200/80 sm:col-span-2">
                         <p class="text-slate-400 font-semibold text-[10px] uppercase">Keperluan / Keterangan</p>
-                        <p class="mt-0.5 text-slate-700 whitespace-pre-wrap leading-relaxed">{{ $selectedLetter->purpose }}</p>
+                        <p class="mt-0.5 text-slate-700 whitespace-pre-wrap leading-relaxed">{{ $selectedLetter->purpose ?: '-' }}</p>
                     </div>
                     <div class="bg-slate-50/60 p-3 rounded-2xl border border-slate-200/80">
                         <p class="text-slate-400 font-semibold text-[10px] uppercase">Pemohon (Karyawan)</p>
@@ -343,12 +344,6 @@
                     </div>
                 </div>
             @endif
-
-            <div class="modal-action justify-end pt-2 border-t border-slate-100">
-                <button type="button" wire:click="closeDetailModal" class="btn btn-ghost btn-sm text-xs font-semibold text-slate-500">
-                    Tutup
-                </button>
-            </div>
         </div>
         <div class="modal-backdrop bg-transparent" wire:click="closeDetailModal">
             <button class="cursor-default">close</button>

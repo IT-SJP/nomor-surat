@@ -5,6 +5,7 @@ use App\Livewire\BranchManagement;
 use App\Livewire\DashboardAdmin;
 use App\Livewire\LetterHistory;
 use App\Livewire\LetterRequestForm;
+use App\Livewire\TargetManagement;
 use Illuminate\Support\Facades\Route;
 
 // SSO Authentication Handshake Routes (Unprotected)
@@ -24,10 +25,7 @@ Route::middleware('absen.auth')->group(function () {
 
     Route::get('/dashboard', DashboardAdmin::class)->name('dashboard');
     Route::get('/branches', BranchManagement::class)->name('branch.management');
+    Route::get('/targets', TargetManagement::class)->name('target.management');
     Route::get('/request', LetterRequestForm::class)->name('letter.request');
     Route::get('/history', LetterHistory::class)->name('letter.history');
-
-    // Indonesian aliases
-    Route::get('/pengajuan', LetterRequestForm::class)->name('letter.pengajuan');
-    Route::get('/riwayat', LetterHistory::class)->name('letter.riwayat');
 });

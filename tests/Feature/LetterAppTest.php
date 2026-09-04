@@ -3,9 +3,12 @@
 use App\Livewire\LetterHistory;
 use App\Livewire\LetterRequestForm;
 use App\Models\Letter;
+use Database\Seeders\LetterTargetSeeder;
 use Livewire\Livewire;
 
 beforeEach(function () {
+    (new LetterTargetSeeder)->run();
+
     $this->withSession([
         'auth_sso' => [
             'type' => 'admin',
@@ -35,7 +38,8 @@ test('letter request form page renders successfully', function () {
         ->assertSee('Buat Nomor Surat Keluar');
 });
 
-test('can create a new letter via livewire component', function () {
+test('can create a new letter via livewire component with custom target and standard target', function () {
+    // Custom non-standard target
     Livewire::test(LetterRequestForm::class)
         ->set('branch_code', 'SJP')
         ->set('target_code', 'IJTM')
@@ -49,9 +53,45 @@ test('can create a new letter via livewire component', function () {
         ->assertSet('showSuccessModal', true);
 
     $this->assertDatabaseHas('letters', [
-        'reference_number' => 'SJP/I/2026/001',
+        'reference_number' => '001/SJP/I/2026',
         'requestor_name' => 'Ahmad Dani',
         'target_code' => 'IJTM',
+    ]);
+
+    // Standard target (IM)
+    Livewire::test(LetterRequestForm::class)
+        ->set('branch_code', 'SJP')
+        ->set('target_code', 'IM')
+        ->set('month', 1)
+        ->set('year', 2026)
+        ->set('subject', 'Memo Internal Divisi')
+        ->set('purpose', 'Koordinasi')
+        ->set('requestor_name', 'Ahmad Dani')
+        ->call('submit')
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseHas('letters', [
+        'reference_number' => '002/IM/SJP/I/2026',
+        'target_code' => 'IM',
+    ]);
+});
+
+test('selectTarget sets target_code to formatted code and name and submits successfully', function () {
+    Livewire::test(LetterRequestForm::class)
+        ->set('branch_code', 'SJP')
+        ->call('selectTarget', 'EXT', 'Eksternal / Instansi Luar')
+        ->assertSet('target_code', 'EXT - Eksternal / Instansi Luar')
+        ->set('month', 9)
+        ->set('year', 2026)
+        ->set('subject', 'Surat Eksternal Bank')
+        ->set('requestor_name', 'Budi Santoso')
+        ->call('submit')
+        ->assertHasNoErrors()
+        ->assertSet('showSuccessModal', true);
+
+    $this->assertDatabaseHas('letters', [
+        'reference_number' => '001/EXT/SJP/IX/2026',
+        'target_code' => 'EXT - Eksternal / Instansi Luar',
     ]);
 });
 
@@ -62,7 +102,20 @@ test('validates required fields on letter request form', function () {
         ->set('purpose', '')
         ->set('requestor_name', '')
         ->call('submit')
-        ->assertHasErrors(['target_code', 'subject', 'purpose', 'requestor_name']);
+        ->assertHasErrors(['target_code', 'subject', 'requestor_name'])
+        ->assertHasNoErrors(['purpose']);
+});
+
+test('clears validation error immediately when selectTarget is called and displays Indonesian messages', function () {
+    Livewire::test(LetterRequestForm::class)
+        ->set('target_code', '')
+        ->call('submit')
+        ->assertHasErrors(['target_code' => 'required'])
+        ->assertSee('Tujuan / instansi penerima surat wajib diisi.')
+        ->assertDontSee('validation.required')
+        ->call('selectTarget', 'ND', 'Nota Dinas')
+        ->assertHasNoErrors(['target_code'])
+        ->assertDontSee('Tujuan / instansi penerima surat wajib diisi.');
 });
 
 test('can lock branch when employee is selected in admin mode', function () {
@@ -261,4 +314,22 @@ test('success modal can be closed via closeSuccessModal and renders close button
         ->assertSeeHtml('wire:click="closeSuccessModal"')
         ->call('closeSuccessModal')
         ->assertSet('showSuccessModal', false);
+});
+
+test('can submit letter request without optional purpose', function () {
+    Livewire::test(LetterRequestForm::class)
+        ->set('branch_code', 'SJP')
+        ->set('target_code', 'IJTM')
+        ->set('month', 1)
+        ->set('year', 2026)
+        ->set('subject', 'Surat Permohonan Tanpa Keterangan')
+        ->set('purpose', '')
+        ->set('requestor_name', 'Budi Santoso')
+        ->call('submit')
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseHas('letters', [
+        'subject' => 'Surat Permohonan Tanpa Keterangan',
+        'purpose' => null,
+    ]);
 });
