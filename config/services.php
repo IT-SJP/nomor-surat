@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'sso' => [
+        'secret' => env('SSO_SECRET_KEY', 'sjp-holding-secret-sso-key'),
+        'absen_url' => env('ABSEN_APP_URL', 'https://absenkusjp.com'),
+    ],
+
 ];

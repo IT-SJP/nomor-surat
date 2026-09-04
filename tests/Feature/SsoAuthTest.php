@@ -31,7 +31,7 @@ test('sso verification fails if signature is invalid', function () {
 });
 
 test('sso verification succeeds for karyawan and redirects to letter request page', function () {
-    $secret = 'sjp-holding-secret-sso-key-2026';
+    $secret = 'sjp-holding-secret-sso-key';
     Config::set('services.sso.secret', $secret);
 
     $rawPayload = [
@@ -57,7 +57,7 @@ test('sso verification succeeds for karyawan and redirects to letter request pag
 });
 
 test('sso verification succeeds for admin and redirects to dashboard', function () {
-    $secret = 'sjp-holding-secret-sso-key-2026';
+    $secret = 'sjp-holding-secret-sso-key';
     Config::set('services.sso.secret', $secret);
 
     $rawPayload = [
@@ -95,7 +95,7 @@ test('karyawan accessing dashboard is redirected to letter request page', functi
 });
 
 test('sso maps admin to official holding branch code and avoids duplicate branch creation', function () {
-    $secret = 'sjp-holding-secret-sso-key-2026';
+    $secret = 'sjp-holding-secret-sso-key';
     Config::set('services.sso.secret', $secret);
 
     // Initial branch exists with official HR code CBNG0001
@@ -128,7 +128,7 @@ test('sso maps admin to official holding branch code and avoids duplicate branch
 });
 
 test('sso verification captures email and phone in auth_sso session', function () {
-    $secret = 'sjp-holding-secret-sso-key-2026';
+    $secret = 'sjp-holding-secret-sso-key';
     Config::set('services.sso.secret', $secret);
 
     $rawPayload = [

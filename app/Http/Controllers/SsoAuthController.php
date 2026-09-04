@@ -26,7 +26,7 @@ class SsoAuthController extends Controller
             ], 403);
         }
 
-        $secret = config('services.sso.secret', env('SSO_SECRET_KEY', 'sjp-holding-secret-sso-key-2026'));
+        $secret = config('services.sso.secret', env('SSO_SECRET_KEY', 'sjp-holding-secret-sso-key'));
         $expectedSignature = hash_hmac('sha256', (string) $token, (string) $secret);
 
         if (! hash_equals($expectedSignature, (string) $signature)) {
