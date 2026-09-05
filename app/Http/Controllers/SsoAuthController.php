@@ -8,6 +8,7 @@ use App\Models\Branch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SsoAuthController extends Controller
@@ -136,11 +137,37 @@ class SsoAuthController extends Controller
             }
         }
 
+        // Tentukan role spesifik admin jika pengguna adalah admin
+        $adminRole = $payload['admin_role'] ?? $payload['role_name'] ?? null;
+        if (! $adminRole && (($payload['role'] ?? '') === 'admin' || ($payload['type'] ?? '') === 'admin')) {
+            try {
+                $userQuery = DB::connection('absen_db')->table('users');
+                if (! empty($payload['id'])) {
+                    $userQuery->where('users.id', $payload['id']);
+                } elseif (! empty($email)) {
+                    $userQuery->where('users.email', $email);
+                }
+                $absenRole = $userQuery
+                    ->join('model_has_roles', DB::raw('users.id::varchar'), '=', 'model_has_roles.model_id')
+                    ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                    ->where('model_has_roles.model_type', 'App\\Models\\User')
+                    ->value('roles.name');
+
+                if ($absenRole) {
+                    $adminRole = strtolower($absenRole);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Gagal sinkron data role admin dari absen_db: '.$e->getMessage());
+            }
+        }
+
         // Store authenticated SSO profile in session
         session([
             'auth_sso' => [
+                'id' => $payload['id'] ?? null,
                 'type' => $payload['type'] ?? $payload['role'],
                 'role' => $payload['role'], // 'admin' | 'karyawan'
+                'admin_role' => $adminRole,
                 'nik' => $payload['nik'] ?? null,
                 'name' => $payload['name'] ?? 'Pengguna Absenku',
                 'email' => $email,

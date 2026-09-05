@@ -115,7 +115,7 @@ class Karyawan extends Model
      *
      * @return Collection<int, array<string, mixed>>
      */
-    public static function searchEmployees(string $keyword = '', int $limit = 10): Collection
+    public static function searchEmployees(string $keyword = '', int $limit = 10, ?string $kodeCabang = null): Collection
     {
         try {
             DB::connection('absen_db')->getPdo();
@@ -124,6 +124,10 @@ class Karyawan extends Model
             $query = static::query()
                 ->with(['cabang', 'departemen', 'jabatanRel'])
                 ->where('status_aktif', 'Aktif');
+
+            if (! empty($kodeCabang)) {
+                $query->where('kode_cabang', $kodeCabang);
+            }
 
             if (trim($keyword) !== '') {
                 $query->where(function (Builder $q) use ($keyword) {

@@ -178,4 +178,13 @@ div:where(.swal2-container).swal2-top-end > .swal2-popup {
     animation: sjp-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Prevent DaisyUI drawer-toggle from locking page scroll on mobile (< lg / 1024px) */
+@media (max-width: 1023.98px) {
+    :root:has(.drawer-toggle:checked):not(:has(.modal.modal-open, .modal[open], .modal:target, .modal-toggle:checked)) {
+        --page-scroll-lock: revert-layer;
+        overflow-y: auto;
+    }
+}
+
+
 

@@ -1,6 +1,44 @@
 @php
     $sso = session('auth_sso', []);
-    $isAdmin = ($sso['role'] ?? '') === 'admin';
+    $role = strtolower((string) ($sso['role'] ?? ''));
+    $adminRole = strtolower((string) ($sso['admin_role'] ?? ''));
+    $type = strtolower((string) ($sso['type'] ?? ''));
+    $position = strtolower((string) ($sso['position_name'] ?? ''));
+
+    $isAdmin = in_array($role, ['admin', 'administrator', 'admin cabang', 'hrd'])
+        || in_array($adminRole, ['admin', 'administrator', 'admin cabang', 'hrd'])
+        || in_array($type, ['admin', 'administrator', 'admin cabang', 'hrd'])
+        || str_contains($role, 'admin');
+
+    if ($isAdmin && empty($adminRole) && ($adminEmail = $sso['email'] ?? null)) {
+        try {
+            $dbRole = \Illuminate\Support\Facades\DB::connection('absen_db')
+                ->table('users')
+                ->join('model_has_roles', \Illuminate\Support\Facades\DB::raw('users.id::text'), '=', 'model_has_roles.model_id')
+                ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                ->where('users.email', $adminEmail)
+                ->value('roles.name');
+            if ($dbRole) {
+                $adminRole = strtolower($dbRole);
+                session(['auth_sso.admin_role' => $adminRole]);
+            }
+        } catch (\Throwable $e) {
+            // Ignore if connection is unavailable
+        }
+    }
+
+    if ($adminRole === 'admin cabang' || $role === 'admin cabang' || $type === 'admin cabang' || str_contains($position, 'admin cabang')) {
+        $userRoleLabel = 'Admin Cabang';
+    } elseif ($adminRole === 'hrd' || $role === 'hrd' || $type === 'hrd' || str_contains($position, 'hrd')) {
+        $userRoleLabel = 'HRD';
+    } elseif ($adminRole === 'administrator' || $role === 'administrator') {
+        $userRoleLabel = 'Administrator';
+    } elseif ($isAdmin) {
+        $userRoleLabel = ! empty($adminRole) ? ucwords($adminRole) : 'Administrator';
+    } else {
+        $userRoleLabel = $sso['department_name'] ?? 'Karyawan';
+    }
+
     $userName = $sso['name'] ?? 'Pengguna SJP';
     $userDept = $sso['department_name'] ?? null;
     $userPos = $sso['position_name'] ?? null;
@@ -74,7 +112,7 @@
                         </div>
                         <div class="flex flex-col text-left">
                             <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[140px] sm:max-w-[200px]">{{ $userName }}</span>
-                            <span class="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{{ $isAdmin ? 'Administrator' : ($userDept ?? 'Karyawan') }}</span>
+                            <span class="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{{ $userRoleLabel }}</span>
                         </div>
                     </div>
 

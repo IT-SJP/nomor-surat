@@ -87,6 +87,12 @@ class LetterRequestForm extends Component
 
     public bool $showSuccessModal = false;
 
+    public bool $isAdminCabang = false;
+
+    public ?string $adminBranchHrCode = null;
+
+    public ?string $adminBranchCode = null;
+
     public function mount(?string $karyawan_nik = null): void
     {
         $this->month = (int) date('n');
@@ -95,6 +101,21 @@ class LetterRequestForm extends Component
         $sso = session('auth_sso', []);
         $this->isKaryawan = ($sso['role'] ?? '') === 'karyawan';
         $this->isAdmin = ($sso['role'] ?? '') === 'admin';
+
+        $adminRole = strtolower((string) ($sso['admin_role'] ?? ''));
+        $role = strtolower((string) ($sso['role'] ?? ''));
+        $type = strtolower((string) ($sso['type'] ?? ''));
+        $position = strtolower((string) ($sso['position_name'] ?? ''));
+
+        $this->isAdminCabang = $adminRole === 'admin cabang'
+            || $role === 'admin cabang'
+            || $type === 'admin cabang'
+            || str_contains($position, 'admin cabang');
+
+        if ($this->isAdminCabang) {
+            $this->adminBranchHrCode = (string) ($sso['raw_branch_code'] ?? $sso['branch_code'] ?? '');
+            $this->adminBranchCode = (string) ($sso['branch_code'] ?? '');
+        }
 
         if ($this->isKaryawan) {
             // Auto-lock branch and requestor fields to logged-in Karyawan
@@ -135,8 +156,29 @@ class LetterRequestForm extends Component
             $this->isPhoneLocked = ! empty(trim($this->requestor_phone));
             $this->isDepartmentLocked = ! empty(trim($this->requestor_department));
             $this->isPositionLocked = ! empty(trim($this->requestor_position));
+        } elseif ($this->isAdminCabang) {
+            // Khusus Admin Cabang: Cabang langsung otomatis mengarah ke cabang admin tersebut dan terkunci
+            $rawHrCode = $this->adminBranchHrCode;
+            $localBranch = Branch::where('hr_code', $rawHrCode)->first();
+            if (! $localBranch && ! empty($this->adminBranchCode)) {
+                $localBranch = Branch::where('branch_code', $this->adminBranchCode)->first();
+            }
+
+            $this->branch_code = $localBranch?->branch_code ?? (string) ($sso['branch_code'] ?? '');
+            $this->branch_name = $localBranch?->name ?? (string) ($sso['branch_name'] ?? "Cabang {$rawHrCode}");
+            $this->isBranchLocked = true;
+
+            // Karyawan yang muncul hanya dari cabang admin tersebut
+            if ($karyawan_nik) {
+                $employees = Karyawan::searchEmployees($karyawan_nik, 1, $rawHrCode);
+                if ($employees->isNotEmpty()) {
+                    $this->selectEmployee($employees->first());
+                }
+            } else {
+                $this->employeeResults = Karyawan::searchEmployees('', 8, $rawHrCode)->toArray();
+            }
         } else {
-            // Admin mode default
+            // Admin mode default (Super Admin / HRD)
             $activeBranches = Cabang::getActiveBranches();
             if ($activeBranches->isNotEmpty()) {
                 $this->branch_code = $activeBranches->first()['code'] ?? '';
@@ -161,10 +203,12 @@ class LetterRequestForm extends Component
         }
 
         $query = trim($value);
+        $branchFilter = $this->isAdminCabang ? $this->adminBranchHrCode : null;
+
         if ($query !== '') {
-            $this->employeeResults = Karyawan::searchEmployees($query, 12)->toArray();
+            $this->employeeResults = Karyawan::searchEmployees($query, 12, $branchFilter)->toArray();
         } else {
-            $this->employeeResults = Karyawan::searchEmployees('', 8)->toArray();
+            $this->employeeResults = Karyawan::searchEmployees('', 8, $branchFilter)->toArray();
         }
     }
 
@@ -184,7 +228,7 @@ class LetterRequestForm extends Component
         $this->requestor_email = $employee['email'] ?? '';
         $this->requestor_phone = $employee['phone'] ?? '';
 
-        if (! empty($employee['branch_code'])) {
+        if (! empty($employee['branch_code']) && ! $this->isAdminCabang) {
             $this->branch_code = $employee['branch_code'];
             $this->branch_name = $employee['branch_name'];
             $this->isBranchLocked = true;
@@ -206,22 +250,28 @@ class LetterRequestForm extends Component
 
         $this->selectedEmployee = null;
         $this->employeeSearch = '';
-        $this->employeeResults = Karyawan::searchEmployees('', 8)->toArray();
+        $branchFilter = $this->isAdminCabang ? $this->adminBranchHrCode : null;
+        $this->employeeResults = Karyawan::searchEmployees('', 8, $branchFilter)->toArray();
         $this->requestor_name = '';
         $this->requestor_department = '';
         $this->requestor_position = '';
         $this->requestor_email = '';
         $this->requestor_phone = '';
-        $this->isBranchLocked = false;
         $this->isEmailLocked = false;
         $this->isPhoneLocked = false;
         $this->isDepartmentLocked = false;
         $this->isPositionLocked = false;
+
+        if (! $this->isAdminCabang) {
+            $this->isBranchLocked = false;
+        } else {
+            $this->isBranchLocked = true;
+        }
     }
 
     public function updatedBranchCode(string $code): void
     {
-        if ($this->isKaryawan) {
+        if ($this->isKaryawan || $this->isAdminCabang) {
             return;
         }
 
@@ -334,6 +384,13 @@ class LetterRequestForm extends Component
     {
         /** @var Collection<int, array{id: int|string|null, code: string, name: string}> $branches */
         $branches = Cabang::getActiveBranches();
+
+        if ($this->isAdminCabang && ! empty($this->adminBranchHrCode)) {
+            $branches = $branches->filter(function ($b) {
+                return ($b['code'] ?? '') === $this->branch_code
+                    || ($b['id'] ?? '') === $this->adminBranchHrCode;
+            });
+        }
 
         $previewNumber = $this->branch_code && $this->month && $this->year
             ? $service->previewNextNumber($this->branch_code, $this->month, $this->year, $this->target_code)

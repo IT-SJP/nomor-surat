@@ -374,3 +374,86 @@ test('collapsible icon-only drawer sidebar renders with DaisyUI 5 classes and to
         ->assertSeeHtml('dock dock-bottom')
         ->assertSeeHtml('is-drawer-close:hidden');
 });
+
+test('app css contains mobile scroll lock override for daisyui drawer-toggle', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)->toContain('@media (max-width: 1023.98px)')
+        ->toContain('--page-scroll-lock: revert-layer')
+        ->toContain('overflow-y: auto');
+});
+
+test('admin cabang has branch auto-locked and employees scoped to their own branch', function () {
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin cabang',
+            'role' => 'admin cabang',
+            'admin_role' => 'admin cabang',
+            'name' => 'HRD SITE KETAHUN',
+            'raw_branch_code' => 'CBNG0003',
+            'branch_code' => 'KTN01',
+            'branch_name' => 'Cabang Ketahun',
+        ],
+    ]);
+
+    $response = $this->get(route('letter.request'));
+    $response->assertOk()
+        ->assertSee('Cabang Penerbit Surat')
+        ->assertSee('KTN01 — Cabang Ketahun');
+
+    Livewire::test(LetterRequestForm::class)
+        ->assertSet('isAdminCabang', true)
+        ->assertSet('isBranchLocked', true)
+        ->assertSet('branch_code', 'KTN01')
+        ->assertSet('branch_name', 'Cabang Ketahun');
+});
+
+test('header user profile displays role label according to user state', function () {
+    // 1. Admin Cabang
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin',
+            'role' => 'admin cabang',
+            'admin_role' => 'admin cabang',
+            'name' => 'HRD SITE KETAHUN',
+        ],
+    ])->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Admin Cabang');
+
+    // 2. HRD
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin',
+            'role' => 'hrd',
+            'admin_role' => 'hrd',
+            'name' => 'Ahmad Yozi',
+        ],
+    ])->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('HRD');
+
+    // 3. Administrator
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin',
+            'role' => 'administrator',
+            'admin_role' => 'administrator',
+            'name' => 'Muhammad Nurul Karim',
+        ],
+    ])->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Administrator');
+
+    // 4. Karyawan
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'karyawan',
+            'role' => 'karyawan',
+            'name' => 'Budi Santoso',
+            'department_name' => 'Operasional',
+        ],
+    ])->get(route('letter.request'))
+        ->assertOk()
+        ->assertSee('Operasional');
+});

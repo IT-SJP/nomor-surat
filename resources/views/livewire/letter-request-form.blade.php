@@ -83,12 +83,11 @@
                         Cabang / Entitas Penerbit <span class="text-rose-500">*</span>
                     </label>
 
-                    @if($isKaryawan)
-                        <!-- Karyawan Mode: Clean locked visual card -->
+                    @if($isKaryawan || $isAdminCabang)
+                        <!-- Karyawan & Admin Cabang Mode: Clean locked visual card -->
                         <div class="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
                             <div class="space-y-0.5">
-                                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Cabang Terdaftar Anda:</span>
-                                <h4 class="font-bold text-sm text-primary-600 dark:text-primary-400">{{ $branch_name }}</h4>
+                                <h4 class="font-bold text-sm text-primary-600 dark:text-primary-400">{{ !empty($branch_code) ? "{$branch_code} — {$branch_name}" : $branch_name }}</h4>
                             </div>
                         </div>
                     @else
