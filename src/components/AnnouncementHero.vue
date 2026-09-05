@@ -1,9 +1,9 @@
 <template>
-  <section class="pt-8 sm:pt-12 pb-6">
+  <section class="pt-6 sm:pt-8 pb-0">
     <div class="max-w-4xl mx-auto px-4 sm:px-6">
       <!-- DaisyUI Alert Banner -->
       <div
-        class="alert alert-warning shadow-md border border-amber-300 rounded-2xl p-4 sm:p-5 mb-8 sm:mb-10 flex items-start gap-4">
+        class="alert alert-warning shadow-md border border-amber-300 rounded-2xl p-4 sm:p-5 mb-3 flex items-start gap-4">
         <div
           class="p-2 rounded-xl bg-amber-200/70 text-amber-900 shrink-0 mt-0.5">
           <svg
@@ -28,26 +28,6 @@
             <strong>dipensiunkan</strong>.
           </p>
         </div>
-      </div>
-
-      <!-- Main Headline & Intro -->
-      <div class="text-center space-y-4 sm:space-y-5">
-        <h1
-          class="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-          Cara Mengakses <br class="hidden sm:inline" />
-          <span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600">
-            Sistem Nomor Surat
-          </span>
-          yang baru
-        </h1>
-
-        <p
-          class="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          Kini seluruh pembuatan dan pengelolaan nomor surat terpusat di dalam
-          sistem baru. Untuk mengaksesnya, Anda wajib login melalui
-          <strong>Akun Karyawan</strong>.
-        </p>
       </div>
     </div>
   </section>

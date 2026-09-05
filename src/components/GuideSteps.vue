@@ -1,5 +1,5 @@
 <template>
-  <section class="py-6 sm:py-10">
+  <section class="pt-2 sm:pt-3 pb-8 sm:pb-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 space-y-8 sm:space-y-10">
       <!-- Main Guide Card -->
       <div
