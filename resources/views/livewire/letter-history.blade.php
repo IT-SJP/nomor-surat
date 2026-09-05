@@ -5,6 +5,15 @@
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 {{ $isKaryawan ? "Riwayat Nomor Surat ({$userBranch})" : 'Riwayat Seluruh Nomor Surat' }}
             </h1>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                @if($isAdminCabang)
+                    Daftar riwayat nomor surat resmi khusus cabang {{ $adminBranchCode ? "{$adminBranchName}" : $adminBranchName }}.
+                @elseif($isKaryawan)
+                    Daftar riwayat nomor surat yang telah diterbitkan untuk cabang {{ $userBranchName }}.
+                @else
+                    Kelola dan pantau seluruh riwayat nomor surat yang telah diterbitkan pada holding SJP.
+                @endif
+            </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0">
@@ -24,13 +33,13 @@
             <button
                 type="button"
                 wire:click="exportCsv"
-                @click="window.showToast('info', 'Sedang memproses dan mengunduh berkas CSV...', 'Unduh CSV')"
+                @click="window.showToast('info', 'Sedang memproses dan mengunduh berkas CSV...', 'Download CSV')"
                 class="btn btn-primary btn-md rounded-lg text-white font-bold gap-2 shadow-md shadow-primary-600/20 text-xs sm:text-sm flex-1 sm:flex-initial justify-center px-2.5 sm:px-4 whitespace-nowrap cursor-pointer"
             >
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                <span>Unduh CSV</span>
+                <span>Download CSV</span>
             </button>
         </div>
     </div>
@@ -38,12 +47,12 @@
     <!-- Filter & Search Card (Collapsible Accordion on Mobile) -->
     <div 
         x-data="{ 
-            isOpen: {{ ($date || ($isAdmin && $branch)) ? 'true' : 'false' }},
+            isOpen: {{ ($date || ($isAdmin && ! $isAdminCabang && $branch)) ? 'true' : 'false' }},
             activeCount: 0,
             updateCount() {
                 let count = 0;
                 if ($wire.date) count++;
-                if ({{ $isAdmin ? 'true' : 'false' }} && $wire.branch) count++;
+                if ({{ ($isAdmin && ! $isAdminCabang) ? 'true' : 'false' }} && $wire.branch) count++;
                 this.activeCount = count;
             }
         }"
@@ -163,9 +172,9 @@
                 class="order-3 lg:order-2 lg:col-span-3 space-y-1 transition-all"
             >
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Cabang</label>
-                @if($isKaryawan)
+                @if($isKaryawan || $isAdminCabang)
                     <div class="input input-bordered w-full flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 text-xs font-bold text-primary-600 dark:text-primary-400 rounded-lg cursor-not-allowed border-slate-200 dark:border-slate-700">
-                        <span>{{ $userBranch }} - {{ $userBranchName }}</span>
+                        <span class="truncate">{{ $isAdminCabang ? ($adminBranchCode ? "{$adminBranchCode} — {$adminBranchName}" : $adminBranchName) : "{$userBranch} — {$userBranchName}" }}</span>
                     </div>
                 @else
                     <select wire:model.live="branch" class="select select-bordered w-full rounded-lg text-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500">
@@ -178,7 +187,7 @@
             </div>
         </div>
 
-        @if($search || ($isAdmin && $branch) || $date)
+        @if($search || ($isAdmin && ! $isAdminCabang && $branch) || $date)
             <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span class="badge badge-primary badge-xs rounded-full"></span>
@@ -374,6 +383,17 @@
                 <form wire:submit="importCsv" class="mt-4 space-y-4">
                     <!-- Info Box Format -->
                     <div class="bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/50 rounded-2xl p-3.5 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
+                        @if($isAdminCabang)
+                            <div class="flex items-center gap-1.5 text-primary-800 dark:text-primary-300 font-bold mb-1">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                <span>Import Khusus Cabang: {{ $adminBranchCode ? "{$adminBranchName}" : $adminBranchName }}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                Sebagai Admin Cabang, nomor surat yang diimpor akan otomatis ditetapkan ke cabang <strong>{{ $adminBranchName }}</strong>. Baris data untuk cabang lain akan ditolak demi keamanan data.
+                            </p>
+                        @endif
                         <p class="font-bold text-primary-800 dark:text-primary-300 flex items-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

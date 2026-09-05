@@ -27,10 +27,18 @@ class LetterImportService
     protected array $sequenceCounters = [];
 
     /**
+     * Cached collection of branch models.
+     *
+     * @var Collection<int, Branch>
+     */
+    protected Collection $branchModels;
+
+    /**
      * Parse and import letters from a given CSV file path.
      *
      * @param  string  $filePath  Absolute path to the CSV file
      * @param  bool  $dryRun  If true, validates and previews without persisting
+     * @param  string|array<string>|null  $allowedBranch  Specific branch code(s) allowed for import
      * @return array{
      *     success: bool,
      *     total_rows: int,
@@ -40,7 +48,7 @@ class LetterImportService
      *     letters: Collection<int, Letter>
      * }
      */
-    public function importFromPath(string $filePath, bool $dryRun = false): array
+    public function importFromPath(string $filePath, bool $dryRun = false, string|array|null $allowedBranch = null): array
     {
         if (! file_exists($filePath) || ! is_readable($filePath)) {
             throw new InvalidArgumentException("File CSV tidak ditemukan atau tidak dapat dibaca: {$filePath}");
@@ -52,7 +60,7 @@ class LetterImportService
         }
 
         try {
-            return $this->importFromHandle($handle, $dryRun);
+            return $this->importFromHandle($handle, $dryRun, $allowedBranch);
         } finally {
             fclose($handle);
         }
@@ -62,6 +70,7 @@ class LetterImportService
      * Import letters from an open file handle resource.
      *
      * @param  resource  $handle
+     * @param  string|array<string>|null  $allowedBranch
      * @return array{
      *     success: bool,
      *     total_rows: int,
@@ -71,7 +80,7 @@ class LetterImportService
      *     letters: Collection<int, Letter>
      * }
      */
-    public function importFromHandle($handle, bool $dryRun = false): array
+    public function importFromHandle($handle, bool $dryRun = false, string|array|null $allowedBranch = null): array
     {
         // Strip UTF-8 BOM if present
         $bom = fread($handle, 3);
@@ -107,7 +116,7 @@ class LetterImportService
             }
 
             try {
-                $record = $this->parseRow($row, $columnMap, $rowNumber);
+                $record = $this->parseRow($row, $columnMap, $rowNumber, $allowedBranch);
                 if ($record) {
                     $rowsToInsert[] = $record;
                 }
@@ -205,19 +214,22 @@ class LetterImportService
      *
      * @param  list<string>  $row
      * @param  array<string, int>  $map
+     * @param  string|array<string>|null  $allowedBranch
      * @return array<string, mixed>|null
      */
-    protected function parseRow(array $row, array $map, int $rowNumber): ?array
+    protected function parseRow(array $row, array $map, int $rowNumber, string|array|null $allowedBranch = null): ?array
     {
         $rawSubject = trim((string) ($row[$map['subject'] ?? 7] ?? ''));
         if ($rawSubject === '') {
             return null; // Skip rows without perihal/subject
         }
 
-        // 1. Company / Branch code
-        $rawBranch = trim((string) ($row[$map['branch_code'] ?? 3] ?? 'SJP'));
-        $branchCode = strtoupper($rawBranch ?: 'SJP');
-        $branchName = $this->branchNameCache[$branchCode] ?? "Cabang {$branchCode}";
+        // 1. Company / Branch resolution & matching
+        $rawBranch = trim((string) ($row[$map['branch_code'] ?? 3] ?? ''));
+        $resolvedBranch = $this->resolveBranch($rawBranch, $allowedBranch);
+        $branchId = $resolvedBranch['branch_id'];
+        $branchCode = $resolvedBranch['branch_code'];
+        $branchName = $resolvedBranch['branch_name'];
 
         // 2. Timestamp / Date
         $rawTimestamp = trim((string) ($row[$map['timestamp'] ?? 1] ?? ''));
@@ -261,6 +273,7 @@ class LetterImportService
         $rawRequestor = trim((string) ($row[$map['requestor_name'] ?? 10] ?? 'Karyawan'));
 
         return [
+            'branch_id' => $branchId,
             'reference_number' => $referenceNumber,
             'sequence_number' => $sequenceNumber,
             'branch_code' => $branchCode,
@@ -356,18 +369,141 @@ class LetterImportService
     }
 
     /**
+     * Resolve and match branch from CSV string.
+     *
+     * @param  string|array<string>|null  $allowedBranch
+     * @return array{branch_id: int|null, branch_code: string, branch_name: string}
+     */
+    protected function resolveBranch(string $rawBranch, string|array|null $allowedBranch = null): array
+    {
+        $trimmedRaw = trim($rawBranch);
+
+        if ($allowedBranch !== null) {
+            $allowedList = array_map('strtoupper', array_values(array_filter((array) $allowedBranch)));
+            $primaryAllowed = $allowedList[0] ?? 'SJP';
+
+            if ($trimmedRaw === '') {
+                $branchCode = $primaryAllowed;
+            } else {
+                $upperRaw = strtoupper($trimmedRaw);
+                $isAllowed = in_array($upperRaw, $allowedList, true);
+
+                if (! $isAllowed && isset($this->branchModels)) {
+                    $allowedBranchModel = $this->branchModels->first(function ($b) use ($allowedList) {
+                        return in_array(strtoupper((string) $b->branch_code), $allowedList, true)
+                            || in_array(strtoupper((string) $b->hr_code), $allowedList, true);
+                    });
+
+                    if ($allowedBranchModel) {
+                        if (strcasecmp($allowedBranchModel->name, $trimmedRaw) === 0
+                            || strcasecmp($allowedBranchModel->hr_code, $trimmedRaw) === 0
+                            || strcasecmp((string) $allowedBranchModel->branch_code, $trimmedRaw) === 0) {
+                            $isAllowed = true;
+                        }
+                    }
+                }
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException("Cabang '{$rawBranch}' tidak diizinkan. Anda hanya dapat mengimpor nomor surat untuk cabang {$primaryAllowed}.");
+                }
+
+                $branchCode = $primaryAllowed;
+            }
+
+            $matched = isset($this->branchModels) ? $this->branchModels->first(function ($b) use ($branchCode, $allowedList) {
+                return strtoupper((string) $b->branch_code) === $branchCode
+                    || in_array(strtoupper((string) $b->branch_code), $allowedList, true)
+                    || in_array(strtoupper((string) $b->hr_code), $allowedList, true);
+            }) : null;
+
+            if ($matched) {
+                return [
+                    'branch_id' => $matched->id,
+                    'branch_code' => $matched->branch_code ?: $matched->hr_code,
+                    'branch_name' => $matched->name,
+                ];
+            }
+
+            return [
+                'branch_id' => null,
+                'branch_code' => $branchCode,
+                'branch_name' => $this->branchNameCache[$branchCode] ?? "Cabang {$branchCode}",
+            ];
+        }
+
+        // Unrestricted import (Super Admin / HRD)
+        if ($trimmedRaw === '') {
+            $defaultCode = 'SJP';
+            $matched = isset($this->branchModels) ? $this->branchModels->first(fn ($b) => strtoupper((string) $b->branch_code) === 'SJP' || strtoupper((string) $b->hr_code) === 'SJP') : null;
+
+            return [
+                'branch_id' => $matched?->id,
+                'branch_code' => $matched ? ($matched->branch_code ?: $matched->hr_code) : $defaultCode,
+                'branch_name' => $matched ? $matched->name : ($this->branchNameCache[$defaultCode] ?? "Cabang {$defaultCode}"),
+            ];
+        }
+
+        $upperRaw = strtoupper($trimmedRaw);
+        $normalizedRaw = strtolower((string) preg_replace('/[^a-zA-Z0-9]/', '', $trimmedRaw));
+
+        // 1. Exact match by branch_code
+        $matched = isset($this->branchModels) ? $this->branchModels->first(fn ($b) => strtoupper((string) $b->branch_code) === $upperRaw) : null;
+
+        // 2. Exact match by hr_code
+        if (! $matched && isset($this->branchModels)) {
+            $matched = $this->branchModels->first(fn ($b) => strtoupper((string) $b->hr_code) === $upperRaw);
+        }
+
+        // 3. Exact match by normalized name
+        if (! $matched && isset($this->branchModels)) {
+            $matched = $this->branchModels->first(function ($b) use ($normalizedRaw) {
+                $normName = strtolower((string) preg_replace('/[^a-zA-Z0-9]/', '', (string) $b->name));
+
+                return $normName === $normalizedRaw;
+            });
+        }
+
+        // 4. Substring match on name (e.g. "Ketahun" matches "Cabang Ketahun" or "SJP Site Ketahun")
+        if (! $matched && isset($this->branchModels) && strlen($normalizedRaw) >= 3) {
+            $matched = $this->branchModels->first(function ($b) use ($normalizedRaw) {
+                $normName = strtolower((string) preg_replace('/[^a-zA-Z0-9]/', '', (string) $b->name));
+
+                return str_contains($normName, $normalizedRaw) || str_contains($normalizedRaw, $normName);
+            });
+        }
+
+        if ($matched) {
+            return [
+                'branch_id' => $matched->id,
+                'branch_code' => $matched->branch_code ?: $matched->hr_code,
+                'branch_name' => $matched->name,
+            ];
+        }
+
+        return [
+            'branch_id' => null,
+            'branch_code' => $upperRaw,
+            'branch_name' => $this->branchNameCache[$upperRaw] ?? "Cabang {$upperRaw}",
+        ];
+    }
+
+    /**
      * Load branch names from database into cache.
      */
     protected function loadBranchNames(): void
     {
         try {
-            $branches = Branch::all(['branch_code', 'name']);
-            foreach ($branches as $b) {
+            $this->branchModels = Branch::all(['id', 'hr_code', 'branch_code', 'name', 'is_active']);
+            foreach ($this->branchModels as $b) {
                 if (! empty($b->branch_code)) {
                     $this->branchNameCache[strtoupper((string) $b->branch_code)] = (string) $b->name;
                 }
+                if (! empty($b->hr_code)) {
+                    $this->branchNameCache[strtoupper((string) $b->hr_code)] = (string) $b->name;
+                }
             }
         } catch (Throwable) {
+            $this->branchModels = collect();
             $this->branchNameCache = [
                 'SJP' => 'PT Selamat Jaya Persada',
             ];

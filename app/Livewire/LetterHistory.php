@@ -26,6 +26,14 @@ class LetterHistory extends Component
 
     public bool $isAdmin = false;
 
+    public bool $isAdminCabang = false;
+
+    public string $adminBranchCode = '';
+
+    public string $adminBranchHrCode = '';
+
+    public string $adminBranchName = '';
+
     public string $userBranch = 'SJP';
 
     public string $userBranchName = 'PT Selamat Jaya Persada';
@@ -56,12 +64,31 @@ class LetterHistory extends Component
     public function mount(): void
     {
         $sso = session('auth_sso', []);
-        $this->isKaryawan = ($sso['role'] ?? '') === 'karyawan';
-        $this->isAdmin = ($sso['role'] ?? '') === 'admin';
-        $this->userBranch = $sso['branch_code'] ?? 'SJP';
-        $this->userBranchName = $sso['branch_name'] ?? ($sso['branch_code'] ?? 'PT Selamat Jaya Persada');
+        $role = strtolower((string) ($sso['role'] ?? ''));
+        $adminRole = strtolower((string) ($sso['admin_role'] ?? ''));
+        $type = strtolower((string) ($sso['type'] ?? ''));
+        $position = strtolower((string) ($sso['position_name'] ?? ''));
 
-        if ($this->isKaryawan) {
+        $this->isKaryawan = $role === 'karyawan' || $type === 'karyawan';
+        $this->isAdmin = in_array($role, ['admin', 'administrator', 'admin cabang', 'hrd'])
+            || in_array($adminRole, ['admin', 'administrator', 'admin cabang', 'hrd'])
+            || in_array($type, ['admin', 'administrator', 'admin cabang', 'hrd'])
+            || str_contains($role, 'admin');
+
+        $this->isAdminCabang = $adminRole === 'admin cabang'
+            || $role === 'admin cabang'
+            || $type === 'admin cabang'
+            || str_contains($position, 'admin cabang');
+
+        $this->userBranch = (string) ($sso['branch_code'] ?? 'SJP');
+        $this->userBranchName = (string) ($sso['branch_name'] ?? ($sso['branch_code'] ?? 'PT Selamat Jaya Persada'));
+
+        if ($this->isAdminCabang) {
+            $this->adminBranchHrCode = (string) ($sso['raw_branch_code'] ?? $sso['branch_code'] ?? '');
+            $this->adminBranchCode = (string) ($sso['branch_code'] ?? '');
+            $this->adminBranchName = (string) ($sso['branch_name'] ?? '');
+            $this->branch = $this->adminBranchCode;
+        } elseif ($this->isKaryawan) {
             // Strictly enforce and lock to Karyawan's branch
             $this->branch = $this->userBranch;
         }
@@ -74,7 +101,9 @@ class LetterHistory extends Component
 
     public function updatedBranch(): void
     {
-        if ($this->isKaryawan) {
+        if ($this->isAdminCabang) {
+            $this->branch = $this->adminBranchCode;
+        } elseif ($this->isKaryawan) {
             $this->branch = $this->userBranch;
         }
         $this->resetPage();
@@ -93,10 +122,12 @@ class LetterHistory extends Component
     public function resetFilters(): void
     {
         $this->reset(['search', 'date']);
-        if ($this->isAdmin) {
-            $this->reset('branch');
-        } else {
+        if ($this->isAdminCabang) {
+            $this->branch = $this->adminBranchCode;
+        } elseif ($this->isKaryawan) {
             $this->branch = $this->userBranch;
+        } else {
+            $this->reset('branch');
         }
         $this->resetPage();
     }
@@ -104,7 +135,9 @@ class LetterHistory extends Component
     public function viewLetter(int $id): void
     {
         $query = Letter::query()->where('id', $id);
-        if ($this->isKaryawan) {
+        if ($this->isAdminCabang) {
+            $query->where('branch_code', $this->adminBranchCode);
+        } elseif ($this->isKaryawan) {
             $query->where('branch_code', $this->userBranch);
         }
 
@@ -154,7 +187,12 @@ class LetterHistory extends Component
         ]);
 
         $path = $this->csvFile->getRealPath();
-        $result = $service->importFromPath($path, false);
+
+        $allowedBranch = $this->isAdminCabang
+            ? array_values(array_unique(array_filter([$this->adminBranchCode, $this->adminBranchHrCode])))
+            : null;
+
+        $result = $service->importFromPath($path, false, $allowedBranch);
         $this->importResult = $result;
 
         $this->dispatch('toast', [
@@ -169,7 +207,9 @@ class LetterHistory extends Component
 
     public function exportCsv(): StreamedResponse
     {
-        $effectiveBranch = $this->isKaryawan ? $this->userBranch : $this->branch;
+        $effectiveBranch = $this->isAdminCabang
+            ? $this->adminBranchCode
+            : ($this->isKaryawan ? $this->userBranch : $this->branch);
 
         $letters = Letter::query()
             ->search($this->search)
@@ -234,7 +274,24 @@ class LetterHistory extends Component
         /** @var Collection<int, array{id: int|string|null, code: string, name: string}> $branches */
         $branches = Cabang::getActiveBranches();
 
-        $effectiveBranch = $this->isKaryawan ? $this->userBranch : $this->branch;
+        if ($this->isAdminCabang) {
+            $effectiveBranch = $this->adminBranchCode;
+            $branches = $branches->filter(function ($b) {
+                return (isset($b['code']) && strtoupper($b['code']) === strtoupper($this->adminBranchCode))
+                    || (isset($b['hr_code']) && strtoupper($b['hr_code']) === strtoupper($this->adminBranchHrCode));
+            });
+            if ($branches->isEmpty() && $this->adminBranchCode) {
+                $branches = collect([[
+                    'id' => null,
+                    'code' => $this->adminBranchCode,
+                    'name' => $this->adminBranchName ?: $this->adminBranchCode,
+                ]]);
+            }
+        } elseif ($this->isKaryawan) {
+            $effectiveBranch = $this->userBranch;
+        } else {
+            $effectiveBranch = $this->branch;
+        }
 
         $letters = Letter::query()
             ->search($this->search)
@@ -247,6 +304,9 @@ class LetterHistory extends Component
             'letters' => $letters,
             'branches' => $branches,
             'userBranchName' => $this->userBranchName,
+            'isAdminCabang' => $this->isAdminCabang,
+            'adminBranchCode' => $this->adminBranchCode,
+            'adminBranchName' => $this->adminBranchName,
         ]);
     }
 }

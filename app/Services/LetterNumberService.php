@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
 use App\Models\Letter;
 use App\Models\LetterTarget;
 use Illuminate\Support\Collection;
@@ -78,9 +79,30 @@ class LetterNumberService
     }
 
     /**
+     * Regenerate a letter's reference number with an updated branch code.
+     */
+    public static function regenerateReferenceNumber(Letter $letter, string $branchCode): string
+    {
+        $paddedSequence = str_pad((string) $letter->sequence_number, 3, '0', STR_PAD_LEFT);
+        $monthRoman = $letter->month_roman ?: self::monthToRoman((int) $letter->month);
+        $year = $letter->year;
+
+        $targetCode = null;
+        if (! empty($letter->target_code)) {
+            $matchedTarget = LetterTarget::findMatching($letter->target_code);
+            $targetCode = $matchedTarget ? $matchedTarget->code : trim((string) $letter->target_code);
+        }
+
+        return ! empty($targetCode)
+            ? "{$paddedSequence}/{$targetCode}/{$branchCode}/{$monthRoman}/{$year}"
+            : "{$paddedSequence}/{$branchCode}/{$monthRoman}/{$year}";
+    }
+
+    /**
      * Generate the next sequence number and formatted reference number atomically.
      *
      * @param  array{
+     *     branch_id?: int|null,
      *     branch_code: string,
      *     branch_name?: string|null,
      *     target_code: string,
@@ -128,11 +150,23 @@ class LetterNumberService
                 ? "{$paddedSequence}/{$matchedTarget->code}/{$branchCode}/{$monthRoman}/{$year}"
                 : "{$paddedSequence}/{$branchCode}/{$monthRoman}/{$year}";
 
+            // Find matching branch to link relation
+            $matchedBranch = null;
+            if (! empty($data['branch_id'])) {
+                $matchedBranch = Branch::find($data['branch_id']);
+            }
+            if (! $matchedBranch && ! empty($branchCode)) {
+                $matchedBranch = Branch::where('branch_code', $branchCode)
+                    ->orWhere('hr_code', $branchCode)
+                    ->first();
+            }
+
             return Letter::create([
+                'branch_id' => $matchedBranch?->id,
                 'reference_number' => $referenceNumber,
                 'sequence_number' => $nextSequence,
                 'branch_code' => $branchCode,
-                'branch_name' => $data['branch_name'] ?? null,
+                'branch_name' => $matchedBranch ? $matchedBranch->name : ($data['branch_name'] ?? null),
                 'target_code' => $targetCode,
                 'month_roman' => $monthRoman,
                 'month' => $month,

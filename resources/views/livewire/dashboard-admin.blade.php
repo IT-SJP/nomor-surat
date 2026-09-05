@@ -13,7 +13,9 @@
                 <div class="space-y-1">
                     <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Nomor Surat Keluar</p>
                     <h3 class="text-2xl sm:text-3xl font-black text-primary-600 dark:text-primary-400">{{ number_format($totalLetters) }}</h3>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Seluruh cabang</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {{ $isAdminCabang ? ($adminBranchCode ? "Cabang {$adminBranchCode}" : $adminBranchName) : 'Seluruh cabang' }}
+                    </p>
                 </div>
                 <div class="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 border border-primary-100 dark:border-primary-900/50 flex items-center justify-center shadow-2xs">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,9 +61,15 @@
         <div class="card bg-base-100 dark:bg-slate-900 rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 card-hover-lift">
             <div class="flex items-center justify-between">
                 <div class="space-y-1">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Cabang Tersedia</p>
-                    <h3 class="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">{{ $totalBranchesCount }}</h3>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Terdaftar dalam sistem</p>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        {{ $isAdminCabang ? 'Cabang Anda' : 'Cabang Tersedia' }}
+                    </p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">
+                        {{ $isAdminCabang ? $adminBranchCode : $totalBranchesCount }}
+                    </h3>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[150px]" title="{{ $isAdminCabang ? $adminBranchName : 'Terdaftar dalam sistem' }}">
+                        {{ $isAdminCabang ? $adminBranchName : 'Terdaftar dalam sistem' }}
+                    </p>
                 </div>
                 <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center shadow-2xs">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,30 +80,32 @@
         </div>
     </div>
 
-    <!-- Company Stats Grid -->
-    <div class="space-y-4">
-        <h2 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Akumulasi Surat Per Cabang</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-            @foreach($branches as $branch)
-                @php
-                    $count = $branchStats[$branch['code']] ?? 0;
-                @endphp
-                <a href="{{ route('letter.history', ['branch' => $branch['code']]) }}"
-                   wire:navigate
-                   class="card bg-base-100 dark:bg-slate-900 hover:bg-primary-50/40 dark:hover:bg-primary-950/30 shadow-xs hover:border-primary-500/50 dark:hover:border-primary-500/50 transition-all duration-200 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 text-center group cursor-pointer card-hover-lift">
-                    <div class="badge badge-outline font-mono font-bold text-xs group-hover:bg-primary-600 group-hover:text-white group-hover:border-primary-600 transition-colors self-center py-1 px-2 rounded-md">
-                        {{ $branch['code'] }}
-                    </div>
-                    <div class="text-2xl font-black tracking-tight text-primary-600 dark:text-primary-400 mt-2">
-                        {{ $count }}
-                    </div>
-                    <p class="text-[11px] font-semibold text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 truncate mt-1" title="{{ $branch['name'] }}">
-                        {{ $branch['name'] }}
-                    </p>
-                </a>
-            @endforeach
+    @if(! $isAdminCabang)
+        <!-- Company Stats Grid -->
+        <div class="space-y-4">
+            <h2 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Akumulasi Surat Per Cabang</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                @foreach($branches as $branch)
+                    @php
+                        $count = $branchStats[$branch['code']] ?? 0;
+                    @endphp
+                    <a href="{{ route('letter.history', ['branch' => $branch['code']]) }}"
+                       wire:navigate
+                       class="card bg-base-100 dark:bg-slate-900 hover:bg-primary-50/40 dark:hover:bg-primary-950/30 shadow-xs hover:border-primary-500/50 dark:hover:border-primary-500/50 transition-all duration-200 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 text-center group cursor-pointer card-hover-lift">
+                        <div class="badge badge-outline font-mono font-bold text-xs group-hover:bg-primary-600 group-hover:text-white group-hover:border-primary-600 transition-colors self-center py-1 px-2 rounded-md">
+                            {{ $branch['code'] }}
+                        </div>
+                        <div class="text-2xl font-black tracking-tight text-primary-600 dark:text-primary-400 mt-2">
+                            {{ $count }}
+                        </div>
+                        <p class="text-[11px] font-semibold text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 truncate mt-1" title="{{ $branch['name'] }}">
+                            {{ $branch['name'] }}
+                        </p>
+                    </a>
+                @endforeach
+            </div>
         </div>
-    </div>
+    @endif
 
     <!-- Recent Letters Activity Feed -->
     <div class="card bg-base-100 dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden">

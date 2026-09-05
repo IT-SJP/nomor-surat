@@ -1,6 +1,8 @@
 <?php
 
+use App\Livewire\BranchManagement;
 use App\Livewire\LetterHistory;
+use App\Models\Branch;
 use App\Models\Letter;
 use App\Services\LetterImportService;
 use Illuminate\Http\UploadedFile;
@@ -140,4 +142,93 @@ test('admin can upload CSV file and import records through Livewire component', 
     expect(Letter::count())->toBe(1)
         ->and(Letter::first()->reference_number)->toBe('001/EXT/SJP/I/2026')
         ->and(Letter::first()->subject)->toBe('Surat Uji Coba Web');
+});
+
+test('admin cabang CSV import is restricted to their own branch and rejects other branches', function () {
+    session([
+        'auth_sso' => [
+            'type' => 'admin cabang',
+            'role' => 'admin cabang',
+            'admin_role' => 'admin cabang',
+            'name' => 'HRD SITE KETAHUN',
+            'raw_branch_code' => 'CBNG0003',
+            'branch_code' => 'KTN01',
+            'branch_name' => 'Cabang Ketahun',
+        ],
+    ]);
+
+    // Row 1: Valid Ketahun (explicit branch code KTN01)
+    // Row 2: Invalid branch (SJP - different branch)
+    // Row 3: Valid Ketahun (empty branch, will default to KTN01)
+    $csvContent = "No,Timestamp,Nomor Surat,Kode Perusahaan,Kode Tujuan,Bulan,Tahun,Perihal,Tujuan,Letak Arsip,Requestor\n".
+        "1,\"05/01/2026 10:00:00\",,KTN01,EXT,I,2026,Surat Sah Ketahun,Pengujian,Legal,Admin\n".
+        "2,\"05/01/2026 10:00:00\",,SJP,EXT,I,2026,Surat Cabang Lain Ditolak,Pengujian,Legal,Admin\n".
+        '3,"05/01/2026 10:00:00",,,INT,I,2026,Surat Default Ketahun,Pengujian,Legal,Admin';
+
+    $file = UploadedFile::fake()->createWithContent('letters_ketahun.csv', $csvContent);
+
+    Livewire::test(LetterHistory::class)
+        ->call('openImportModal')
+        ->set('csvFile', $file)
+        ->call('importCsv')
+        ->assertDispatched('toast')
+        ->assertSet('importResult.imported_count', 2)
+        ->assertSet('importResult.skipped_count', 1);
+
+    expect(Letter::count())->toBe(2);
+    expect(Letter::where('branch_code', 'KTN01')->count())->toBe(2);
+    expect(Letter::where('branch_code', 'SJP')->count())->toBe(0);
+});
+
+test('imported letters automatically link to matching branch and update when branch code changes', function () {
+    $branch = Branch::create([
+        'hr_code' => 'CBNG_IMP',
+        'branch_code' => 'IMP01',
+        'name' => 'Cabang Import Eksternal',
+        'is_active' => true,
+    ]);
+
+    $csvContent = "No,Timestamp,Nomor Surat,Kode Perusahaan,Kode Tujuan,Bulan,Tahun,Perihal,Tujuan,Letak Arsip,Requestor\n".
+        "1,\"05/01/2026 10:00:00\",,IMP01,EXT,I,2026,Surat Import Match Kode,Pengujian,Legal,Admin\n".
+        '2,"05/01/2026 10:00:00",,"Cabang Import Eksternal",EXT,I,2026,Surat Import Match Nama,Pengujian,Legal,Admin';
+
+    $tempPath = tempnam(sys_get_temp_dir(), 'test_match_');
+    file_put_contents($tempPath, $csvContent);
+
+    try {
+        $service = new LetterImportService;
+        $result = $service->importFromPath($tempPath, false);
+
+        expect($result['success'])->toBeTrue()
+            ->and($result['imported_count'])->toBe(2);
+
+        $letters = Letter::where('branch_id', $branch->id)->get();
+        expect($letters)->toHaveCount(2);
+
+        session([
+            'auth_sso' => [
+                'type' => 'admin',
+                'role' => 'administrator',
+                'admin_role' => 'administrator',
+                'name' => 'Admin Test',
+            ],
+        ]);
+
+        // When branch code is updated in BranchManagement
+        Livewire::test(BranchManagement::class)
+            ->call('updateBranchCode', $branch->id, 'IMP_RESMI')
+            ->assertHasNoErrors();
+
+        // Both letters must follow the new official branch code in reference_number and branch_code
+        $freshLetters = Letter::where('branch_id', $branch->id)->get();
+        expect($freshLetters)->toHaveCount(2);
+        foreach ($freshLetters as $letter) {
+            expect($letter->branch_code)->toBe('IMP_RESMI')
+                ->and($letter->reference_number)->toContain('/IMP_RESMI/');
+        }
+    } finally {
+        if (file_exists($tempPath)) {
+            unlink($tempPath);
+        }
+    }
 });

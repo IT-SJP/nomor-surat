@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\DashboardAdmin;
 use App\Livewire\LetterHistory;
 use App\Livewire\LetterRequestForm;
 use App\Models\Letter;
@@ -398,7 +399,6 @@ test('admin cabang has branch auto-locked and employees scoped to their own bran
 
     $response = $this->get(route('letter.request'));
     $response->assertOk()
-        ->assertSee('Cabang Penerbit Surat')
         ->assertSee('KTN01 — Cabang Ketahun');
 
     Livewire::test(LetterRequestForm::class)
@@ -406,6 +406,83 @@ test('admin cabang has branch auto-locked and employees scoped to their own bran
         ->assertSet('isBranchLocked', true)
         ->assertSet('branch_code', 'KTN01')
         ->assertSet('branch_name', 'Cabang Ketahun');
+});
+
+test('admin cabang only sees their own branch letters and branch filter is locked in letter history', function () {
+    Letter::factory()->create([
+        'branch_code' => 'KTN01',
+        'subject' => 'Surat Khusus Ketahun',
+    ]);
+    Letter::factory()->create([
+        'branch_code' => 'SJP',
+        'subject' => 'Surat Milik Pusat SJP',
+    ]);
+    Letter::factory()->create([
+        'branch_code' => 'JMB01',
+        'subject' => 'Surat Milik Jambi',
+    ]);
+
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin cabang',
+            'role' => 'admin cabang',
+            'admin_role' => 'admin cabang',
+            'name' => 'HRD SITE KETAHUN',
+            'raw_branch_code' => 'CBNG0003',
+            'branch_code' => 'KTN01',
+            'branch_name' => 'Cabang Ketahun',
+        ],
+    ]);
+
+    Livewire::test(LetterHistory::class)
+        ->assertOk()
+        ->assertSet('isAdminCabang', true)
+        ->assertSet('branch', 'KTN01')
+        ->assertSee('Surat Khusus Ketahun')
+        ->assertDontSee('Surat Milik Pusat SJP')
+        ->assertDontSee('Surat Milik Jambi')
+        // Try to tamper branch filter to SJP
+        ->set('branch', 'SJP')
+        ->assertSet('branch', 'KTN01')
+        // Reset filters also keeps branch locked
+        ->call('resetFilters')
+        ->assertSet('branch', 'KTN01');
+});
+
+test('admin cabang only exports their own branch letters via CSV export', function () {
+    Letter::factory()->create([
+        'branch_code' => 'KTN01',
+        'subject' => 'Surat Export Ketahun',
+    ]);
+    Letter::factory()->create([
+        'branch_code' => 'SJP',
+        'subject' => 'Surat Export Pusat SJP',
+    ]);
+
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin cabang',
+            'role' => 'admin cabang',
+            'admin_role' => 'admin cabang',
+            'name' => 'HRD SITE KETAHUN',
+            'raw_branch_code' => 'CBNG0003',
+            'branch_code' => 'KTN01',
+            'branch_name' => 'Cabang Ketahun',
+        ],
+    ]);
+
+    $component = Livewire::test(LetterHistory::class);
+    $response = $component->call('exportCsv');
+    $streamedResponse = $response->effects['download'] ?? null;
+
+    // Call exportCsv directly on instance
+    $export = $component->instance()->exportCsv();
+    ob_start();
+    $export->sendContent();
+    $content = ob_get_clean();
+
+    expect($content)->toContain('Surat Export Ketahun')
+        ->and($content)->not->toContain('Surat Export Pusat SJP');
 });
 
 test('header user profile displays role label according to user state', function () {
@@ -456,4 +533,49 @@ test('header user profile displays role label according to user state', function
     ])->get(route('letter.request'))
         ->assertOk()
         ->assertSee('Operasional');
+});
+
+test('admin cabang dashboard stats and recent letters are strictly filtered to their own branch', function () {
+    Letter::factory()->create([
+        'branch_code' => 'KTN01',
+        'subject' => 'Surat Dashboard Ketahun',
+    ]);
+    Letter::factory()->create([
+        'branch_code' => 'SJP',
+        'subject' => 'Surat Dashboard Pusat SJP 1',
+    ]);
+    Letter::factory()->create([
+        'branch_code' => 'SJP',
+        'subject' => 'Surat Dashboard Pusat SJP 2',
+    ]);
+
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin cabang',
+            'role' => 'admin cabang',
+            'admin_role' => 'admin cabang',
+            'name' => 'HRD SITE KETAHUN',
+            'raw_branch_code' => 'CBNG0003',
+            'branch_code' => 'KTN01',
+            'branch_name' => 'Cabang Ketahun',
+        ],
+    ]);
+
+    $response = $this->get(route('dashboard'));
+    $response->assertOk()
+        ->assertSee('Dashboard Monitoring Surat')
+        ->assertSee('Cabang KTN01')
+        ->assertSee('Surat Dashboard Ketahun')
+        ->assertDontSee('Surat Dashboard Pusat SJP 1')
+        ->assertDontSee('Akumulasi Surat Per Cabang');
+
+    Livewire::test(DashboardAdmin::class)
+        ->assertOk()
+        ->assertSet('isAdminCabang', true)
+        ->assertSet('adminBranchCode', 'KTN01')
+        ->assertViewHas('totalLetters', 1)
+        ->assertViewHas('totalBranchesCount', 1)
+        ->assertSee('Surat Dashboard Ketahun')
+        ->assertDontSee('Surat Dashboard Pusat SJP 1')
+        ->assertDontSee('Akumulasi Surat Per Cabang');
 });

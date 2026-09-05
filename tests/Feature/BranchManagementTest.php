@@ -281,3 +281,102 @@ test('other admin roles like owner and staff it have read-only view and cannot e
 
     expect(Branch::find($branch->id))->not->toBeNull();
 });
+
+test('updating branch code cascades to existing letters reference numbers and branch codes', function () {
+    $branch = Branch::create([
+        'hr_code' => 'CBNG99',
+        'branch_code' => 'OLD99',
+        'name' => 'Cabang Sembilan Sembilan',
+        'is_active' => true,
+    ]);
+
+    // Letter 1: linked via branch_id
+    $letter1 = Letter::create([
+        'branch_id' => $branch->id,
+        'reference_number' => '001/ST/OLD99/I/2026',
+        'sequence_number' => 1,
+        'branch_code' => 'OLD99',
+        'branch_name' => 'Cabang Sembilan Sembilan',
+        'target_code' => 'ST',
+        'month_roman' => 'I',
+        'month' => 1,
+        'year' => 2026,
+        'subject' => 'Surat Uji 1',
+        'requestor_name' => 'Karyawan 1',
+    ]);
+
+    // Letter 2: without branch_id, matched by branch_code
+    $letter2 = Letter::create([
+        'reference_number' => '002/EXT/OLD99/I/2026',
+        'sequence_number' => 2,
+        'branch_code' => 'OLD99',
+        'branch_name' => 'Cabang Sembilan Sembilan',
+        'target_code' => 'EXT',
+        'month_roman' => 'I',
+        'month' => 1,
+        'year' => 2026,
+        'subject' => 'Surat Uji 2',
+        'requestor_name' => 'Karyawan 2',
+    ]);
+
+    // Letter 3: different branch, should not be touched
+    $otherLetter = Letter::create([
+        'reference_number' => '001/ST/OTHER/I/2026',
+        'sequence_number' => 1,
+        'branch_code' => 'OTHER',
+        'branch_name' => 'Cabang Lain',
+        'target_code' => 'ST',
+        'month_roman' => 'I',
+        'month' => 1,
+        'year' => 2026,
+        'subject' => 'Surat Cabang Lain',
+        'requestor_name' => 'Karyawan 3',
+    ]);
+
+    Livewire::test(BranchManagement::class)
+        ->call('updateBranchCode', $branch->id, 'NEW99')
+        ->assertHasNoErrors();
+
+    expect($branch->fresh()->branch_code)->toBe('NEW99');
+
+    // Letter 1 updated
+    $letter1->refresh();
+    expect($letter1->branch_code)->toBe('NEW99')
+        ->and($letter1->reference_number)->toBe('001/ST/NEW99/I/2026')
+        ->and($letter1->branch_id)->toBe($branch->id);
+
+    // Letter 2 updated and linked
+    $letter2->refresh();
+    expect($letter2->branch_code)->toBe('NEW99')
+        ->and($letter2->reference_number)->toBe('002/EXT/NEW99/I/2026')
+        ->and($letter2->branch_id)->toBe($branch->id);
+
+    // Other branch letter remains untouched
+    $otherLetter->refresh();
+    expect($otherLetter->branch_code)->toBe('OTHER')
+        ->and($otherLetter->reference_number)->toBe('001/ST/OTHER/I/2026');
+});
+
+test('duplicate branch code validation error is scoped to specific branch row and not shown on other rows', function () {
+    $branch1 = Branch::create([
+        'hr_code' => 'CBNG_A',
+        'branch_code' => 'SJP',
+        'name' => 'PT Selamat Jaya Persada',
+        'is_active' => true,
+    ]);
+
+    $branch2 = Branch::create([
+        'hr_code' => 'CBNG_B',
+        'branch_code' => 'TES',
+        'name' => 'PT Selamat Jaya Pratama',
+        'is_active' => true,
+    ]);
+
+    Livewire::test(BranchManagement::class)
+        ->call('updateBranchCode', $branch2->id, 'SJP')
+        ->assertHasErrors(['code_'.$branch2->id])
+        ->assertHasNoErrors(['code_'.$branch1->id])
+        ->assertDispatched('toast');
+
+    expect($branch2->fresh()->branch_code)->toBe('TES');
+});

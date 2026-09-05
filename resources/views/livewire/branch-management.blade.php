@@ -86,7 +86,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                    @error('code')
+                                    @error('code_'.$branch->id)
                                         <span class="text-red-600 text-[10px] block mt-0.5 font-semibold">{{ $message }}</span>
                                     @enderror
                                 @else

@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Branch;
 use App\Models\Letter;
+use App\Services\LetterNumberService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -186,18 +187,80 @@ class BranchManagement extends Component
             return;
         }
 
-        $validated = validator(['code' => $newCode], [
-            'code' => 'required|string|max:50|unique:branches,branch_code,'.$branch->id,
-        ])->validate();
+        $this->resetValidation();
 
-        $branch->update(['branch_code' => $validated['code']]);
+        $cleanNewCode = strtoupper(trim($newCode));
+
+        if ($cleanNewCode === '') {
+            $errorMsg = 'Kode surat resmi cabang wajib diisi.';
+            $this->addError('code_'.$branchId, $errorMsg);
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Validasi Gagal',
+                'message' => $errorMsg,
+            ]);
+
+            return;
+        }
+
+        if (strlen($cleanNewCode) > 50) {
+            $errorMsg = 'Kode surat resmi cabang maksimal 50 karakter.';
+            $this->addError('code_'.$branchId, $errorMsg);
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Validasi Gagal',
+                'message' => $errorMsg,
+            ]);
+
+            return;
+        }
+
+        // Cek duplikasi terhadap cabang lain
+        $existing = Branch::where('branch_code', $cleanNewCode)
+            ->where('id', '!=', $branch->id)
+            ->first();
+
+        if ($existing) {
+            $errorMsg = "Kode surat '{$cleanNewCode}' sudah digunakan oleh cabang {$existing->name}.";
+            $this->addError('code_'.$branchId, $errorMsg);
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Kode Sudah Digunakan',
+                'message' => $errorMsg,
+            ]);
+
+            return;
+        }
+
+        $oldCode = $branch->branch_code;
+
+        DB::transaction(function () use ($branch, $cleanNewCode, $oldCode) {
+            $branch->update(['branch_code' => $cleanNewCode]);
+
+            // Cascade update all existing letters belonging to this branch
+            $letters = Letter::query()
+                ->where('branch_id', $branch->id)
+                ->when($oldCode, fn ($q) => $q->orWhere('branch_code', $oldCode))
+                ->when($branch->hr_code, fn ($q) => $q->orWhere('branch_code', $branch->hr_code))
+                ->get();
+
+            foreach ($letters as $letter) {
+                $newRef = LetterNumberService::regenerateReferenceNumber($letter, $cleanNewCode);
+                $letter->update([
+                    'branch_id' => $branch->id,
+                    'branch_code' => $cleanNewCode,
+                    'branch_name' => $branch->name,
+                    'reference_number' => $newRef,
+                ]);
+            }
+        });
 
         session()->flash('status', 'Kode surat cabang berhasil diperbarui.');
 
         $this->dispatch('toast', [
             'type' => 'success',
             'title' => 'Kode Surat Diperbarui',
-            'message' => "Kode surat {$branch->name} berhasil diubah menjadi '{$validated['code']}'.",
+            'message' => "Kode surat {$branch->name} berhasil diubah menjadi '{$cleanNewCode}'.",
         ]);
     }
 
@@ -216,7 +279,8 @@ class BranchManagement extends Component
         }
 
         // Validasi apakah cabang sudah memiliki surat keluar yang pernah diterbitkan
-        $lettersCount = Letter::where('branch_code', $branch->branch_code)
+        $lettersCount = Letter::where('branch_id', $branch->id)
+            ->orWhere('branch_code', $branch->branch_code)
             ->orWhere('branch_code', $branch->hr_code)
             ->count();
 

@@ -6,6 +6,7 @@ use Database\Factories\LetterFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Letter extends Model
 {
@@ -18,6 +19,7 @@ class Letter extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'branch_id',
         'reference_number',
         'sequence_number',
         'branch_code',
@@ -44,10 +46,21 @@ class Letter extends Model
     protected function casts(): array
     {
         return [
+            'branch_id' => 'integer',
             'sequence_number' => 'integer',
             'month' => 'integer',
             'year' => 'integer',
         ];
+    }
+
+    /**
+     * Get the branch associated with this letter.
+     *
+     * @return BelongsTo<Branch, $this>
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /**
