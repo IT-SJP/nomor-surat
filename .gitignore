@@ -9,8 +9,10 @@ Homestead.yaml
 backup*
 *.sql
 
-# Dependencies
+# Dependencies & Build Output
 /node_modules
+/dist
+/dist-ssr
 /vendor
 npm-debug.log
 yarn-error.log
