@@ -1,0 +1,68 @@
+# Environment & Secrets
+.env
+.env.backup
+.env.production
+.env.*.local
+/auth.json
+Homestead.json
+Homestead.yaml
+backup*
+*.sql
+
+# Dependencies
+/node_modules
+/vendor
+npm-debug.log
+yarn-error.log
+yarn-debug.log*
+
+# Laravel Storage & Cache
+*.log
+/storage/*.key
+/storage/pail
+/public/hot
+/public/build
+/public/storage
+/public/fonts-manifest.dev.json
+
+# Keep .gitignore inside storage subdirectories
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+/storage/*.key
+/storage/pail
+
+# Testing & Linters
+/.phpunit.cache
+.phpunit.result.cache
+.phpactor.json
+playwright-report/
+test-results/
+blob-report/
+
+# OS & IDE Junk
+.DS_Store
+Thumbs.db
+/.idea
+/.vscode
+/.fleet
+/.nova
+/.zed
+
+# Dev Tools & AI Artifacts
+ecosystem.config.cjs
+graphify-out/
+/scratch
+.opencode/
+**/.claude/*
+CLAUDE.md
+.agents
+.editorconfig
+AGENTS.md
+boost.json
+DESIGN.md
