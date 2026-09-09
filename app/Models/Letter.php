@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Letter extends Model
 {
@@ -20,8 +21,10 @@ class Letter extends Model
      */
     protected $fillable = [
         'branch_id',
+        'parent_id',
         'reference_number',
         'sequence_number',
+        'sub_number',
         'branch_code',
         'branch_name',
         'target_code',
@@ -47,7 +50,9 @@ class Letter extends Model
     {
         return [
             'branch_id' => 'integer',
+            'parent_id' => 'integer',
             'sequence_number' => 'integer',
+            'sub_number' => 'integer',
             'month' => 'integer',
             'year' => 'integer',
         ];
@@ -61,6 +66,34 @@ class Letter extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Get the parent letter if this is a sub-letter.
+     *
+     * @return BelongsTo<Letter, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Letter::class, 'parent_id');
+    }
+
+    /**
+     * Get the sub-letters under this parent letter.
+     *
+     * @return HasMany<Letter, $this>
+     */
+    public function subLetters(): HasMany
+    {
+        return $this->hasMany(Letter::class, 'parent_id')->orderBy('sub_number');
+    }
+
+    /**
+     * Check if this letter is a sub-letter.
+     */
+    public function isSubLetter(): bool
+    {
+        return ! is_null($this->parent_id);
     }
 
     /**

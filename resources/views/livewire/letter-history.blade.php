@@ -178,7 +178,7 @@
                     </div>
                 @else
                     <select wire:model.live="branch" class="select select-bordered w-full rounded-lg text-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500">
-                        <option value="">Semua Cabang SJP</option>
+                        <option value="">Semua Cabang SJP Holding</option>
                         @foreach($branches as $b)
                             <option value="{{ $b['code'] }}">{{ $b['code'] }} &mdash; {{ $b['name'] }}</option>
                         @endforeach
@@ -211,6 +211,7 @@
                     <tr class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         <th class="px-6 py-4 w-12 text-center">No</th>
                         <th class="px-6 py-4 text-left">Nomor Surat Resmi</th>
+                        <th class="px-6 py-4 text-center">Sub-Nomor</th>
                         <th class="px-6 py-4 text-left">Cabang</th>
                         <th class="px-6 py-4 text-left">Perihal / Keperluan</th>
                         <th class="px-6 py-4 text-left">Penerima / Instansi</th>
@@ -225,20 +226,31 @@
                                 {{ $loop->iteration + ($letters->currentPage() - 1) * $letters->perPage() }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <button
-                                    type="button"
-                                    class="font-mono font-bold text-primary-600 dark:text-primary-400 text-xs sm:text-sm tracking-wide select-all text-left hover:underline cursor-pointer flex items-center gap-1.5 group/copy"
-                                    title="Klik untuk menyalin nomor surat"
-                                    @click="window.copyToClipboard('{{ $letter->reference_number }}', 'Nomor Surat')"
-                                >
-                                    <span>{{ $letter->reference_number }}</span>
-                                    <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover/copy:text-primary-600 dark:group-hover/copy:text-primary-400 opacity-0 group-hover/copy:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                    </svg>
-                                </button>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <button
+                                        type="button"
+                                        class="font-mono font-bold text-primary-600 dark:text-primary-400 text-xs sm:text-sm tracking-wide select-all text-left hover:underline cursor-pointer flex items-center gap-1.5 group/copy"
+                                        title="Klik untuk menyalin nomor surat"
+                                        @click="window.copyToClipboard('{{ $letter->reference_number }}', 'Nomor Surat')"
+                                    >
+                                        <span>{{ $letter->reference_number }}</span>
+                                        <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover/copy:text-primary-600 dark:group-hover/copy:text-primary-400 opacity-0 group-hover/copy:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                    </button>
+                                </div>
                                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium font-mono block">
                                     {{ $letter->created_at->format('d/m/Y • H:i') }} WIB
                                 </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                @if($letter->subLetters->isNotEmpty())
+                                    <span class="badge badge-outline badge-sm font-mono font-bold text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800/60 rounded-md" title="{{ $letter->subLetters->count() }} Sub-Nomor Surat">
+                                        {{ $letter->subLetters->count() }}
+                                    </span>
+                                @else
+                                    <span class="text-slate-400 dark:text-slate-500 font-mono font-bold text-xs">-</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="badge badge-outline badge-sm font-mono font-bold text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800/60 rounded-md">
@@ -276,7 +288,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-16 p-6">
+                            <td colspan="8" class="text-center py-16 p-6">
                                 <div class="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 flex items-center justify-center text-xl mx-auto mb-3 shadow-2xs">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-inbox-off"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 4h10a2 2 0 0 1 2 2v10m-.593 3.422a2 2 0 0 1 -1.407 .578h-12a2 2 0 0 1 -2 -2v-12c0 -.554 .225 -1.056 .59 -1.418" /><path d="M4 13h3l3 3h4l.987 -.987m2.013 -2.013h3" /><path d="M3 3l18 18" /></svg>
                                 </div>
@@ -298,10 +310,15 @@
 
     <!-- Detail Modal -->
     <div class="modal {{ $showDetailModal ? 'modal-open' : '' }} z-[100] backdrop-blur-md bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
-        <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900" x-data="{ copiedDetail: false }">
+        <div class="modal-box max-w-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900" x-data="{ copiedDetail: false, copiedSubId: null }">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <h3 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">Detail Nomor Surat</h3>
+                    <h3 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
+                        {{ $selectedLetter?->isSubLetter() ? 'Detail Sub-Nomor Surat' : 'Detail Nomor Surat' }}
+                    </h3>
+                    @if($selectedLetter?->isSubLetter())
+                        <span class="badge badge-warning badge-sm font-bold">Sub-Nomor</span>
+                    @endif
                 </div>
                 <button type="button" wire:click="closeDetailModal" class="btn btn-ghost btn-sm btn-square rounded-md text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors" title="Tutup Modal" aria-label="Tutup">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -311,6 +328,30 @@
             </div>
 
             @if($selectedLetter)
+                @if($selectedLetter->isSubLetter())
+                    <!-- Sub-Letter Indicator Banner -->
+                    <div class="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                        <div class="space-y-0.5">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">Nomor Induk Surat:</span>
+                            <p class="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                                {{ $selectedLetter->parent?->reference_number ?? '-' }}
+                            </p>
+                            @if($selectedLetter->parent)
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-xs">{{ $selectedLetter->parent->subject }}</p>
+                            @endif
+                        </div>
+                        @if($selectedLetter->parent_id)
+                            <button
+                                type="button"
+                                wire:click="viewLetter({{ $selectedLetter->parent_id }})"
+                                class="btn btn-xs btn-outline btn-warning rounded-lg font-bold shrink-0"
+                            >
+                                Buka Surat Induk &rarr;
+                            </button>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Nomor Surat:</span>
@@ -355,6 +396,79 @@
                         <p class="text-slate-400 dark:text-slate-500 font-semibold text-[10px] uppercase">Waktu Diterbitkan</p>
                         <p class="font-bold mt-0.5 text-slate-900 dark:text-white font-mono">{{ $selectedLetter->created_at->translatedFormat('d F Y, H:i') }} WIB</p>
                     </div>
+                </div>
+
+                {{-- Sub-Nomor Section (Only shown if viewing parent letter) --}}
+                @if(! $selectedLetter->isSubLetter())
+                    <div class="border-t border-slate-100 dark:border-slate-800/80 pt-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">Daftar Sub-Nomor Surat</h4>
+                                <span class="badge badge-sm badge-ghost font-bold text-primary-600 dark:text-primary-400">
+                                    {{ $selectedLetter->subLetters->count() }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Sub-Letters List --}}
+                        @if($selectedLetter->subLetters->isNotEmpty())
+                            <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                @foreach($selectedLetter->subLetters as $sub)
+                                    <div
+                                        @click="window.copyToClipboard('{{ $sub->reference_number }}', 'Sub-Nomor Surat'); copiedSubId = {{ $sub->id }}; setTimeout(() => copiedSubId = null, 2000)"
+                                        class="w-full p-3 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/40 dark:hover:bg-primary-950/30 transition-all cursor-pointer group flex items-center justify-between gap-3 text-left active:scale-[0.99]"
+                                        title="Klik untuk menyalin {{ $sub->reference_number }}"
+                                    >
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <span class="font-mono font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors text-xs sm:text-sm truncate select-all">
+                                                {{ $sub->reference_number }}
+                                            </span>
+                                        </div>
+
+                                        <div class="shrink-0">
+                                            <span x-show="copiedSubId === {{ $sub->id }}" class="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1" style="display: none;">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Tersalin!
+                                            </span>
+                                            <span x-show="copiedSubId !== {{ $sub->id }}" class="text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 flex items-center gap-1 text-[11px] transition-colors">
+                                                <svg class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                </svg>
+                                                <span class="hidden sm:inline font-medium">Salin</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="py-4 text-center rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-dashed border-slate-200 dark:border-slate-800">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Belum ada sub-nomor untuk surat induk ini.</p>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <!-- Button Tambah Sub-Nomor Surat di paling bawah modal -->
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                    <button
+                        type="button"
+                        wire:click="addSubLetter"
+                        wire:loading.attr="disabled"
+                        class="btn btn-primary w-full text-white font-extrabold rounded-xl shadow-md shadow-primary-600/20 py-3 h-auto transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                        <span wire:loading.remove wire:target="addSubLetter" class="flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>+ Tambah Sub-Nomor Surat</span>
+                        </span>
+                        <span wire:loading wire:target="addSubLetter" class="flex items-center justify-center gap-2">
+                            <span class="loading loading-spinner loading-xs"></span>
+                            <span>Menerbitkan Sub-Nomor...</span>
+                        </span>
+                    </button>
                 </div>
             @endif
         </div>

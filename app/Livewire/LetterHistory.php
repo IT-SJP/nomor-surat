@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Absen\Cabang;
 use App\Models\Letter;
 use App\Services\LetterImportService;
+use App\Services\LetterNumberService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
@@ -134,7 +135,7 @@ class LetterHistory extends Component
 
     public function viewLetter(int $id): void
     {
-        $query = Letter::query()->where('id', $id);
+        $query = Letter::query()->with(['parent', 'subLetters'])->where('id', $id);
         if ($this->isAdminCabang) {
             $query->where('branch_code', $this->adminBranchCode);
         } elseif ($this->isKaryawan) {
@@ -151,6 +152,28 @@ class LetterHistory extends Component
     {
         $this->showDetailModal = false;
         $this->selectedLetter = null;
+    }
+
+    public function addSubLetter(LetterNumberService $service): void
+    {
+        if (! $this->selectedLetter) {
+            return;
+        }
+
+        // Sub-nomor selalu dibuat untuk surat induk
+        $parent = $this->selectedLetter->parent_id ? $this->selectedLetter->parent : $this->selectedLetter;
+        if (! $parent) {
+            return;
+        }
+
+        $subLetter = $service->createNextSubLetter($parent);
+        $this->selectedLetter = $parent->fresh(['parent', 'subLetters']);
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Sub-Nomor Ditambahkan!',
+            'message' => "Sub-nomor registrasi {$subLetter->reference_number} berhasil dibuat.",
+        ]);
     }
 
     public function openImportModal(): void
@@ -294,7 +317,17 @@ class LetterHistory extends Component
         }
 
         $letters = Letter::query()
-            ->search($this->search)
+            ->whereNull('parent_id')
+            ->with('subLetters')
+            ->withCount('subLetters')
+            ->when($this->search, function ($q) {
+                $q->where(function ($subQ) {
+                    $subQ->search($this->search)
+                        ->orWhereHas('subLetters', function ($childQ) {
+                            $childQ->search($this->search);
+                        });
+                });
+            })
             ->branch($effectiveBranch)
             ->date($this->date)
             ->latest('id')

@@ -19,6 +19,10 @@ use Livewire\Component;
 #[Title('Pengajuan Nomor Surat')]
 class LetterRequestForm extends Component
 {
+    // Opsional: Jumlah sub-nomor surat yang dibuat sekaligus
+    #[Validate('nullable|integer|min:0|max:50')]
+    public int $sub_count = 0;
+
     // SSO Context
     public bool $isKaryawan = false;
 
@@ -269,6 +273,20 @@ class LetterRequestForm extends Component
         }
     }
 
+    public function incrementSubCount(): void
+    {
+        if ($this->sub_count < 50) {
+            $this->sub_count++;
+        }
+    }
+
+    public function decrementSubCount(): void
+    {
+        if ($this->sub_count > 0) {
+            $this->sub_count--;
+        }
+    }
+
     public function updatedBranchCode(string $code): void
     {
         if ($this->isKaryawan || $this->isAdminCabang) {
@@ -306,14 +324,19 @@ class LetterRequestForm extends Component
             'requestor_name' => $this->requestor_name,
             'requestor_email' => $this->requestor_email,
             'requestor_phone' => $this->requestor_phone,
+            'sub_count' => $this->sub_count,
         ]);
 
         $this->showSuccessModal = true;
 
+        $msg = $this->sub_count > 0
+            ? "Nomor registrasi {$this->createdLetter->reference_number} beserta {$this->sub_count} sub-nomor berhasil dibuat."
+            : "Nomor registrasi {$this->createdLetter->reference_number} berhasil dibuat.";
+
         $this->dispatch('toast', [
             'type' => 'success',
             'title' => 'Nomor Surat Terbit!',
-            'message' => "Nomor registrasi {$this->createdLetter->reference_number} berhasil dibuat.",
+            'message' => $msg,
         ]);
     }
 
@@ -325,6 +348,7 @@ class LetterRequestForm extends Component
         $this->subject = '';
         $this->purpose = '';
         $this->archive_location = '';
+        $this->sub_count = 0;
     }
 
     public function closeSuccessModal(): void
