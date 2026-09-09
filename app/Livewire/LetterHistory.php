@@ -5,8 +5,10 @@ namespace App\Livewire;
 use App\Models\Absen\Cabang;
 use App\Models\Letter;
 use App\Services\LetterImportService;
+use App\Services\LetterNumberService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -46,6 +48,9 @@ class LetterHistory extends Component
 
     #[Url]
     public string $date = '';
+
+    #[Url]
+    public ?int $open = null;
 
     public int $perPage = 15;
 
@@ -92,6 +97,20 @@ class LetterHistory extends Component
             // Strictly enforce and lock to Karyawan's branch
             $this->branch = $this->userBranch;
         }
+
+        $openId = $this->open ?: request()->integer('open');
+        if ($openId) {
+            $this->viewLetter($openId);
+        }
+    }
+
+    public function updatedOpen(): void
+    {
+        if ($this->open) {
+            $this->viewLetter($this->open);
+        } else {
+            $this->closeDetailModal();
+        }
     }
 
     public function updatedSearch(): void
@@ -134,7 +153,7 @@ class LetterHistory extends Component
 
     public function viewLetter(int $id): void
     {
-        $query = Letter::query()->where('id', $id);
+        $query = Letter::query()->with(['parent', 'subLetters'])->where('id', $id);
         if ($this->isAdminCabang) {
             $query->where('branch_code', $this->adminBranchCode);
         } elseif ($this->isKaryawan) {
@@ -144,6 +163,9 @@ class LetterHistory extends Component
         $this->selectedLetter = $query->first();
         if ($this->selectedLetter) {
             $this->showDetailModal = true;
+            $this->open = $this->selectedLetter->id;
+        } else {
+            $this->open = null;
         }
     }
 
@@ -151,6 +173,134 @@ class LetterHistory extends Component
     {
         $this->showDetailModal = false;
         $this->selectedLetter = null;
+        $this->open = null;
+    }
+
+    public function addSubLetter(LetterNumberService $service): void
+    {
+        if (! $this->selectedLetter) {
+            return;
+        }
+
+        // Sub-nomor selalu dibuat untuk surat induk
+        $parent = $this->selectedLetter->parent_id ? $this->selectedLetter->parent : $this->selectedLetter;
+        if (! $parent) {
+            return;
+        }
+
+        $subLetter = $service->createNextSubLetter($parent);
+        $this->selectedLetter = $parent->fresh(['parent', 'subLetters']);
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Sub-Nomor Ditambahkan!',
+            'message' => "Sub-nomor registrasi {$subLetter->reference_number} berhasil dibuat.",
+        ]);
+    }
+
+    public function deleteLetter(int $id): void
+    {
+        $query = Letter::query()->where('id', $id);
+        if ($this->isAdminCabang) {
+            $query->where('branch_code', $this->adminBranchCode);
+        } elseif ($this->isKaryawan) {
+            $query->where('branch_code', $this->userBranch);
+        }
+
+        /** @var Letter|null $letter */
+        $letter = $query->first();
+        if (! $letter) {
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Gagal',
+                'message' => 'Nomor surat tidak ditemukan atau Anda tidak memiliki akses.',
+            ]);
+
+            return;
+        }
+
+        $refNumber = $letter->reference_number;
+        $subCount = $letter->subLetters()->count();
+
+        // Tutup modal dan reset selectedLetter SEBELUM menghapus dari database.
+        // Hal ini penting agar Livewire ModelSynth LazyProxy tidak mencoba me-restore/query model yang sudah terhapus (yang menyebabkan ModelNotFoundException / 404).
+        $isViewingDeletedLetter = ($this->open === $id) || ($this->selectedLetter && $this->selectedLetter->id === $id);
+        if ($isViewingDeletedLetter) {
+            $this->closeDetailModal();
+        }
+
+        DB::transaction(function () use ($letter) {
+            $letter->subLetters()->delete();
+            $letter->delete();
+        });
+
+        $message = $subCount > 0
+            ? "Nomor surat {$refNumber} beserta {$subCount} sub-nomor surat berhasil dibatalkan dan dihapus."
+            : "Nomor surat {$refNumber} berhasil dibatalkan dan dihapus.";
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Nomor Surat Dibatalkan',
+            'message' => $message,
+        ]);
+    }
+
+    public function deleteSubLetter(int $subId): void
+    {
+        $query = Letter::query()->whereNotNull('parent_id')->where('id', $subId);
+        if ($this->isAdminCabang) {
+            $query->where('branch_code', $this->adminBranchCode);
+        } elseif ($this->isKaryawan) {
+            $query->where('branch_code', $this->userBranch);
+        }
+
+        /** @var Letter|null $subLetter */
+        $subLetter = $query->first();
+        if (! $subLetter) {
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Gagal',
+                'message' => 'Sub-nomor surat tidak ditemukan atau Anda tidak memiliki akses.',
+            ]);
+
+            return;
+        }
+
+        $parentId = $subLetter->parent_id;
+
+        // Validasi: Pembatalan sub-nomor harus dimulai dari angka terbesar/terakhir yang ditambahkan
+        $latestSub = Letter::where('parent_id', $parentId)->orderByDesc('sub_number')->first();
+        if ($latestSub && $subLetter->id !== $latestSub->id) {
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Urutan Tidak Sesuai',
+                'message' => 'Pembatalan sub-nomor harus dimulai dari angka terbesar/terakhir yang ditambahkan.',
+            ]);
+
+            return;
+        }
+
+        $refNumber = $subLetter->reference_number;
+
+        $isViewingParent = ($this->open === $parentId) || ($this->selectedLetter && $this->selectedLetter->id === $parentId);
+        $isViewingSub = ($this->open === $subId) || ($this->selectedLetter && $this->selectedLetter->id === $subId);
+
+        if ($isViewingSub) {
+            $this->closeDetailModal();
+        }
+
+        $subLetter->delete();
+
+        if ($isViewingParent && $this->selectedLetter) {
+            $this->selectedLetter->refresh();
+            $this->selectedLetter->load(['parent', 'subLetters']);
+        }
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Sub-Nomor Dibatalkan',
+            'message' => "Sub-nomor surat {$refNumber} berhasil dibatalkan dan dihapus.",
+        ]);
     }
 
     public function openImportModal(): void
@@ -261,7 +411,7 @@ class LetterHistory extends Component
                     $item->requestor_name,
                     $item->requestor_email ?? '-',
                     $item->requestor_phone ?? '-',
-                    $item->created_at->format('d/m/Y H:i'),
+                    $item->created_at->timezone('Asia/Jakarta')->format('d/m/Y H:i'),
                 ]);
             }
 
@@ -294,7 +444,17 @@ class LetterHistory extends Component
         }
 
         $letters = Letter::query()
-            ->search($this->search)
+            ->whereNull('parent_id')
+            ->with('subLetters')
+            ->withCount('subLetters')
+            ->when($this->search, function ($q) {
+                $q->where(function ($subQ) {
+                    $subQ->search($this->search)
+                        ->orWhereHas('subLetters', function ($childQ) {
+                            $childQ->search($this->search);
+                        });
+                });
+            })
             ->branch($effectiveBranch)
             ->date($this->date)
             ->latest('id')

@@ -136,6 +136,7 @@
                     <thead class="bg-slate-50/70 dark:bg-slate-800/70">
                         <tr class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                             <th class="px-6 py-3.5 text-left">Nomor Registrasi</th>
+                            <th class="px-6 py-3.5 text-center">Sub-Nomor</th>
                             <th class="px-6 py-3.5 text-left">Cabang</th>
                             <th class="px-6 py-3.5 text-left">Tujuan / Instansi</th>
                             <th class="px-6 py-3.5 text-left">Perihal Surat</th>
@@ -145,9 +146,28 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
                         @foreach($recentLetters as $letter)
-                            <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group">
+                            <tr
+                                class="hover:bg-primary-50/40 dark:hover:bg-slate-800/60 transition-colors group cursor-pointer"
+                                @click="if (!$event.target.closest('a')) Livewire.navigate('{{ route('letter.history', ['open' => $letter->id]) }}')"
+                                title="Klik untuk melihat detail riwayat nomor surat ini"
+                            >
                                 <td class="px-6 py-3.5 whitespace-nowrap">
-                                    <span class="font-mono font-bold text-primary-600 dark:text-primary-400 text-xs sm:text-sm">{{ $letter->reference_number }}</span>
+                                    <a
+                                        href="{{ route('letter.history', ['open' => $letter->id]) }}"
+                                        wire:navigate
+                                        class="font-mono font-bold text-primary-600 dark:text-primary-400 text-xs sm:text-sm group-hover:text-primary-700 dark:group-hover:text-primary-300 group-hover:underline flex items-center gap-1.5"
+                                    >
+                                        <span>{{ $letter->reference_number }}</span>
+                                    </a>
+                                </td>
+                                <td class="px-6 py-3.5 whitespace-nowrap text-center">
+                                    @if($letter->subLetters->isNotEmpty())
+                                        <span class="badge badge-outline badge-sm font-mono font-bold text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800/60 rounded-md" title="{{ $letter->subLetters->count() }} Sub-Nomor Surat">
+                                            {{ $letter->subLetters->count() }}
+                                        </span>
+                                    @else
+                                        <span class="text-slate-400 dark:text-slate-500 font-mono font-bold text-xs">-</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-3.5 whitespace-nowrap">
                                     <span class="badge badge-outline badge-sm font-mono font-bold text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800/80 rounded-md">{{ $letter->branch_code }}</span>
@@ -162,7 +182,12 @@
                                     <span class="font-semibold text-slate-800 dark:text-slate-200">{{ $letter->requestor_name }}</span>
                                 </td>
                                 <td class="px-6 py-3.5 whitespace-nowrap text-slate-500 dark:text-slate-400 font-mono text-xs">
-                                    {{ $letter->created_at->translatedFormat('d M Y, H:i') }} WIB
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span>{{ $letter->created_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB</span>
+                                        <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-all opacity-0 group-hover:opacity-100 transform group-hover:translate-x-0.5 duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

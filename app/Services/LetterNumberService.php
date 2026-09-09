@@ -160,7 +160,7 @@ class LetterNumberService
                     ->first();
             }
 
-            return Letter::create([
+            $letter = Letter::create([
                 'branch_id' => $matchedBranch?->id,
                 'reference_number' => $referenceNumber,
                 'sequence_number' => $nextSequence,
@@ -179,7 +179,121 @@ class LetterNumberService
                 'requestor_email' => ! empty($data['requestor_email']) ? trim((string) $data['requestor_email']) : null,
                 'requestor_phone' => ! empty($data['requestor_phone']) ? trim((string) $data['requestor_phone']) : null,
             ]);
+
+            $subCount = isset($data['sub_count']) ? (int) $data['sub_count'] : 0;
+            if ($subCount > 0) {
+                $subCount = min(50, $subCount);
+                for ($i = 1; $i <= $subCount; $i++) {
+                    $sub = $this->createNextSubLetter($letter);
+                    $sub->created_at = $letter->created_at;
+                    $sub->saveQuietly();
+                }
+                $letter->load('subLetters');
+            }
+
+            return $letter;
         });
+    }
+
+    /**
+     * Create the next sub-letter under an existing parent letter inheriting all parent attributes.
+     * Sub-letter format: [No].[Sub-No]/[Tujuan]/[Cabang]/[Bulan]/[Tahun]
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    public function createNextSubLetter(Letter $parent, array $overrides = []): Letter
+    {
+        return DB::transaction(function () use ($parent, $overrides) {
+            /** @var Letter $lockedParent */
+            $lockedParent = Letter::where('id', $parent->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedParent->parent_id !== null) {
+                throw new InvalidArgumentException('Sub-nomor surat hanya dapat dibuat untuk nomor surat induk.');
+            }
+
+            // Get the highest sub_number for this parent
+            $latestSub = Letter::query()
+                ->where('parent_id', $lockedParent->id)
+                ->orderByDesc('sub_number')
+                ->lockForUpdate()
+                ->first();
+
+            $nextSub = ($latestSub ? (int) $latestSub->sub_number : 0) + 1;
+            $paddedSeq = str_pad((string) $lockedParent->sequence_number, 3, '0', STR_PAD_LEFT);
+            $subPrefix = "{$paddedSeq}.{$nextSub}";
+
+            if (! empty($lockedParent->reference_number) && str_contains($lockedParent->reference_number, '/')) {
+                $parts = explode('/', $lockedParent->reference_number);
+                $parts[0] = $subPrefix;
+                $referenceNumber = implode('/', $parts);
+            } else {
+                $matchedTarget = LetterTarget::findMatching($lockedParent->target_code);
+                $targetCode = $matchedTarget ? $matchedTarget->code : trim((string) $lockedParent->target_code);
+                $referenceNumber = ! empty($targetCode)
+                    ? "{$subPrefix}/{$targetCode}/{$lockedParent->branch_code}/{$lockedParent->month_roman}/{$lockedParent->year}"
+                    : "{$subPrefix}/{$lockedParent->branch_code}/{$lockedParent->month_roman}/{$lockedParent->year}";
+            }
+
+            return Letter::create([
+                'parent_id' => $lockedParent->id,
+                'branch_id' => $lockedParent->branch_id,
+                'reference_number' => $referenceNumber,
+                'sequence_number' => $lockedParent->sequence_number,
+                'sub_number' => $nextSub,
+                'branch_code' => $lockedParent->branch_code,
+                'branch_name' => $lockedParent->branch_name,
+                'target_code' => $lockedParent->target_code,
+                'month_roman' => $lockedParent->month_roman,
+                'month' => $lockedParent->month,
+                'year' => $lockedParent->year,
+                'subject' => ! empty($overrides['subject']) ? trim((string) $overrides['subject']) : $lockedParent->subject,
+                'purpose' => array_key_exists('purpose', $overrides) ? (! empty($overrides['purpose']) ? trim((string) $overrides['purpose']) : null) : $lockedParent->purpose,
+                'archive_location' => array_key_exists('archive_location', $overrides) ? (! empty($overrides['archive_location']) ? trim((string) $overrides['archive_location']) : null) : $lockedParent->archive_location,
+                'requestor_department' => array_key_exists('requestor_department', $overrides) ? (! empty($overrides['requestor_department']) ? trim((string) $overrides['requestor_department']) : null) : $lockedParent->requestor_department,
+                'requestor_position' => array_key_exists('requestor_position', $overrides) ? (! empty($overrides['requestor_position']) ? trim((string) $overrides['requestor_position']) : null) : $lockedParent->requestor_position,
+                'requestor_name' => ! empty($overrides['requestor_name']) ? trim((string) $overrides['requestor_name']) : $lockedParent->requestor_name,
+                'requestor_email' => array_key_exists('requestor_email', $overrides) ? (! empty($overrides['requestor_email']) ? trim((string) $overrides['requestor_email']) : null) : $lockedParent->requestor_email,
+                'requestor_phone' => array_key_exists('requestor_phone', $overrides) ? (! empty($overrides['requestor_phone']) ? trim((string) $overrides['requestor_phone']) : null) : $lockedParent->requestor_phone,
+            ]);
+        });
+    }
+
+    /**
+     * Create a sub-letter under an existing parent letter.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createSubLetter(array $data, Letter $parent): Letter
+    {
+        return $this->createNextSubLetter($parent, $data);
+    }
+
+    /**
+     * Preview the next available sub-number for a given parent letter.
+     */
+    public function previewNextSubNumber(Letter $parent): string
+    {
+        $maxSub = Letter::query()
+            ->where('parent_id', $parent->id)
+            ->max('sub_number') ?? 0;
+
+        $nextSub = $maxSub + 1;
+        $paddedSeq = str_pad((string) $parent->sequence_number, 3, '0', STR_PAD_LEFT);
+        $subPrefix = "{$paddedSeq}.{$nextSub}";
+
+        if (! empty($parent->reference_number) && str_contains($parent->reference_number, '/')) {
+            $parts = explode('/', $parent->reference_number);
+            $parts[0] = $subPrefix;
+
+            return implode('/', $parts);
+        }
+
+        $matchedTarget = LetterTarget::findMatching($parent->target_code);
+        $targetCode = $matchedTarget ? $matchedTarget->code : trim((string) $parent->target_code);
+
+        return ! empty($targetCode)
+            ? "{$subPrefix}/{$targetCode}/{$parent->branch_code}/{$parent->month_roman}/{$parent->year}"
+            : "{$subPrefix}/{$parent->branch_code}/{$parent->month_roman}/{$parent->year}";
     }
 
     /**

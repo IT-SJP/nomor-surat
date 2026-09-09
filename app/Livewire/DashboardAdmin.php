@@ -76,12 +76,17 @@ class DashboardAdmin extends Component
                 ->where('year', date('Y'))
                 ->where('month', date('n'))
                 ->count();
+            $startOfTodayUtc = now('Asia/Jakarta')->startOfDay()->utc();
+            $endOfTodayUtc = now('Asia/Jakarta')->endOfDay()->utc();
+
             $lettersToday = Letter::whereIn('branch_code', $branchCodes)
-                ->whereDate('created_at', today())
+                ->whereBetween('created_at', [$startOfTodayUtc, $endOfTodayUtc])
                 ->count();
             $totalBranchesCount = 1;
 
             $recentLetters = Letter::query()
+                ->whereNull('parent_id')
+                ->with('subLetters')
                 ->whereIn('branch_code', $branchCodes)
                 ->latest('id')
                 ->limit(8)
@@ -93,10 +98,14 @@ class DashboardAdmin extends Component
             $lettersThisMonth = Letter::where('year', date('Y'))
                 ->where('month', date('n'))
                 ->count();
-            $lettersToday = Letter::whereDate('created_at', today())->count();
+            $startOfTodayUtc = now('Asia/Jakarta')->startOfDay()->utc();
+            $endOfTodayUtc = now('Asia/Jakarta')->endOfDay()->utc();
+            $lettersToday = Letter::whereBetween('created_at', [$startOfTodayUtc, $endOfTodayUtc])->count();
             $totalBranchesCount = $branches->count();
 
             $recentLetters = Letter::query()
+                ->whereNull('parent_id')
+                ->with('subLetters')
                 ->latest('id')
                 ->limit(8)
                 ->get();

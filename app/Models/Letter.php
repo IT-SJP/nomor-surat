@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Letter extends Model
 {
@@ -20,8 +22,10 @@ class Letter extends Model
      */
     protected $fillable = [
         'branch_id',
+        'parent_id',
         'reference_number',
         'sequence_number',
+        'sub_number',
         'branch_code',
         'branch_name',
         'target_code',
@@ -47,7 +51,9 @@ class Letter extends Model
     {
         return [
             'branch_id' => 'integer',
+            'parent_id' => 'integer',
             'sequence_number' => 'integer',
+            'sub_number' => 'integer',
             'month' => 'integer',
             'year' => 'integer',
         ];
@@ -61,6 +67,34 @@ class Letter extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Get the parent letter if this is a sub-letter.
+     *
+     * @return BelongsTo<Letter, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Letter::class, 'parent_id');
+    }
+
+    /**
+     * Get the sub-letters under this parent letter.
+     *
+     * @return HasMany<Letter, $this>
+     */
+    public function subLetters(): HasMany
+    {
+        return $this->hasMany(Letter::class, 'parent_id')->orderBy('sub_number');
+    }
+
+    /**
+     * Check if this letter is a sub-letter.
+     */
+    public function isSubLetter(): bool
+    {
+        return ! is_null($this->parent_id);
     }
 
     /**
@@ -114,14 +148,24 @@ class Letter extends Model
     }
 
     /**
-     * Scope query to filter by date (created_at).
+     * Return created_at converted to Asia/Jakarta (UTC+7 / WIB) timezone.
+     */
+    public function getCreatedAtWibAttribute(): ?Carbon
+    {
+        return $this->created_at?->timezone('Asia/Jakarta');
+    }
+
+    /**
+     * Scope query to filter by date (created_at converted to WIB).
      *
      * @param  Builder<self>  $query
      */
     public function scopeDate($query, ?string $date): void
     {
         if (! empty($date)) {
-            $query->whereDate('created_at', $date);
+            $start = Carbon::parse($date, 'Asia/Jakarta')->startOfDay()->utc();
+            $end = Carbon::parse($date, 'Asia/Jakarta')->endOfDay()->utc();
+            $query->whereBetween('created_at', [$start, $end]);
         }
     }
 }
