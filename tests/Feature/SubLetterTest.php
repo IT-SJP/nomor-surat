@@ -351,3 +351,33 @@ test('LetterHistory displays publish time for sub-letters only when different fr
         // Sub 3 shows concrete date and time because it is on a different day
         ->assertSee('12 Sep 2026, 15:45 WIB');
 });
+
+test('LetterHistory can delete parent letter directly from modal detail without ModelNotFoundException or 404', function () {
+    $service = new LetterNumberService;
+
+    $parent = $service->createLetter([
+        'branch_code' => 'SJP',
+        'target_code' => 'IM',
+        'month' => 9,
+        'year' => 2026,
+        'subject' => 'Surat Uji Hapus dari Modal Detail',
+        'requestor_name' => 'Tester Modal',
+        'sub_count' => 2,
+    ]);
+
+    expect(Letter::find($parent->id))->not->toBeNull()
+        ->and(Letter::where('parent_id', $parent->id)->count())->toBe(2);
+
+    Livewire\Livewire::test(LetterHistory::class)
+        ->call('viewLetter', $parent->id)
+        ->assertSet('showDetailModal', true)
+        ->assertSet('open', $parent->id)
+        ->call('deleteLetter', $parent->id)
+        ->assertSet('showDetailModal', false)
+        ->assertSet('selectedLetter', null)
+        ->assertSet('open', null)
+        ->assertDispatched('toast');
+
+    expect(Letter::find($parent->id))->toBeNull()
+        ->and(Letter::where('parent_id', $parent->id)->count())->toBe(0);
+});

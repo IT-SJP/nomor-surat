@@ -222,14 +222,17 @@ class LetterHistory extends Component
         $refNumber = $letter->reference_number;
         $subCount = $letter->subLetters()->count();
 
+        // Tutup modal dan reset selectedLetter SEBELUM menghapus dari database.
+        // Hal ini penting agar Livewire ModelSynth LazyProxy tidak mencoba me-restore/query model yang sudah terhapus (yang menyebabkan ModelNotFoundException / 404).
+        $isViewingDeletedLetter = ($this->open === $id) || ($this->selectedLetter && $this->selectedLetter->id === $id);
+        if ($isViewingDeletedLetter) {
+            $this->closeDetailModal();
+        }
+
         DB::transaction(function () use ($letter) {
             $letter->subLetters()->delete();
             $letter->delete();
         });
-
-        if ($this->selectedLetter && $this->selectedLetter->id === $id) {
-            $this->closeDetailModal();
-        }
 
         $message = $subCount > 0
             ? "Nomor surat {$refNumber} beserta {$subCount} sub-nomor surat berhasil dibatalkan dan dihapus."
@@ -278,15 +281,19 @@ class LetterHistory extends Component
         }
 
         $refNumber = $subLetter->reference_number;
+
+        $isViewingParent = ($this->open === $parentId) || ($this->selectedLetter && $this->selectedLetter->id === $parentId);
+        $isViewingSub = ($this->open === $subId) || ($this->selectedLetter && $this->selectedLetter->id === $subId);
+
+        if ($isViewingSub) {
+            $this->closeDetailModal();
+        }
+
         $subLetter->delete();
 
-        if ($this->selectedLetter) {
-            if ($this->selectedLetter->id === $parentId) {
-                $this->selectedLetter->refresh();
-                $this->selectedLetter->load(['parent', 'subLetters']);
-            } elseif ($this->selectedLetter->id === $subId) {
-                $this->closeDetailModal();
-            }
+        if ($isViewingParent && $this->selectedLetter) {
+            $this->selectedLetter->refresh();
+            $this->selectedLetter->load(['parent', 'subLetters']);
         }
 
         $this->dispatch('toast', [
