@@ -12,10 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('letters', function (Blueprint $table) {
-            $table->foreignId('parent_id')->nullable()->after('branch_id')->constrained('letters')->cascadeOnDelete();
-            $table->unsignedInteger('sub_number')->nullable()->after('sequence_number');
-
-            $table->index(['parent_id', 'sub_number']);
+            $table->dropForeign(['parent_id']);
+            $table->foreign('parent_id')->references('id')->on('letters')->cascadeOnDelete();
         });
     }
 
@@ -25,9 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('letters', function (Blueprint $table) {
-            $table->dropIndex(['parent_id', 'sub_number']);
-            $table->dropConstrainedForeignId('parent_id');
-            $table->dropColumn('sub_number');
+            $table->dropForeign(['parent_id']);
+            $table->foreign('parent_id')->references('id')->on('letters')->nullOnDelete();
         });
     }
 };

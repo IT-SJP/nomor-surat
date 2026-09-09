@@ -240,7 +240,7 @@
                                     </button>
                                 </div>
                                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium font-mono block">
-                                    {{ $letter->created_at->format('d/m/Y • H:i') }} WIB
+                                    {{ $letter->created_at->timezone('Asia/Jakarta')->format('d/m/Y • H:i') }} WIB
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -273,17 +273,43 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-center whitespace-nowrap">
-                                <button
-                                    type="button"
-                                    wire:click="viewLetter({{ $letter->id }})"
-                                    class="btn btn-square btn-primary btn-soft dark:bg-primary-950/50 dark:text-primary-300 dark:hover:bg-primary-900/60 btn-sm rounded-md"
-                                    title="Lihat Detail Surat"
-                                >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        wire:click="viewLetter({{ $letter->id }})"
+                                        class="btn btn-square btn-primary btn-soft dark:bg-primary-950/50 dark:text-primary-300 dark:hover:bg-primary-900/60 btn-sm rounded-md cursor-pointer"
+                                        title="Lihat Detail Surat"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        @click="
+                                            window.confirmAction({
+                                                title: 'Batalkan Nomor Surat?',
+                                                text: 'Apakah Anda yakin ingin membatalkan nomor surat {{ $letter->reference_number }}{{ $letter->subLetters->isNotEmpty() ? ' beserta ' . $letter->subLetters->count() . ' sub-nomornya' : '' }}? Tindakan ini akan menghapus nomor surat secara permanen.',
+                                                icon: 'warning',
+                                                confirmButtonText: 'Ya, Batalkan',
+                                                cancelButtonText: 'Tutup',
+                                                confirmButtonColor: '#dc2626'
+                                            }).then((res) => {
+                                                if (res.isConfirmed) {
+                                                    $wire.deleteLetter({{ $letter->id }});
+                                                }
+                                            });
+                                        "
+                                        class="btn btn-square btn-ghost btn-sm rounded-md text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                        title="Batalkan / Hapus Nomor Surat"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -310,7 +336,7 @@
 
     <!-- Detail Modal -->
     <div class="modal {{ $showDetailModal ? 'modal-open' : '' }} z-[100] backdrop-blur-md bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
-        <div class="modal-box max-w-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900" x-data="{ copiedDetail: false, copiedSubId: null }">
+        <div class="modal-box max-w-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900" x-data="{ copiedDetail: false, copiedSubId: null, copiedAllSubs: false }">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <h3 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
@@ -394,38 +420,81 @@
                     </div>
                     <div class="bg-slate-50/60 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                         <p class="text-slate-400 dark:text-slate-500 font-semibold text-[10px] uppercase">Waktu Diterbitkan</p>
-                        <p class="font-bold mt-0.5 text-slate-900 dark:text-white font-mono">{{ $selectedLetter->created_at->translatedFormat('d F Y, H:i') }} WIB</p>
+                        <p class="font-bold mt-0.5 text-slate-900 dark:text-white font-mono">{{ $selectedLetter->created_at->timezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') }} WIB</p>
                     </div>
                 </div>
 
                 {{-- Sub-Nomor Section (Only shown if viewing parent letter) --}}
                 @if(! $selectedLetter->isSubLetter())
                     <div class="border-t border-slate-100 dark:border-slate-800/80 pt-4 space-y-3">
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
                                 <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">Daftar Sub-Nomor Surat</h4>
                                 <span class="badge badge-sm badge-ghost font-bold text-primary-600 dark:text-primary-400">
                                     {{ $selectedLetter->subLetters->count() }}
                                 </span>
                             </div>
+
+                            @if($selectedLetter->subLetters->isNotEmpty())
+                                <button
+                                    type="button"
+                                    class="btn btn-xs border border-primary-200 dark:border-primary-800/60 bg-primary-50/50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/60 rounded-lg font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                                    title="Salin semua sub-nomor surat"
+                                    @click="
+                                        const allSubs = {{ json_encode($selectedLetter->subLetters->pluck('reference_number')->implode("\n")) }};
+                                        window.copyToClipboard(allSubs, 'Semua Sub-Nomor');
+                                        copiedAllSubs = true;
+                                        setTimeout(() => copiedAllSubs = false, 2500);
+                                    "
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                    <span x-text="copiedAllSubs ? '✓ Tersalin' : 'Salin Semua Sub-Nomor'">Salin Semua Sub-Nomor</span>
+                                </button>
+                            @endif
                         </div>
 
                         {{-- Sub-Letters List --}}
                         @if($selectedLetter->subLetters->isNotEmpty())
+                            @php
+                                $maxSubNumber = $selectedLetter->subLetters->max('sub_number');
+                            @endphp
                             <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
                                 @foreach($selectedLetter->subLetters as $sub)
+                                    @php
+                                        $parentTime = $selectedLetter->created_at->timezone('Asia/Jakarta');
+                                        $subTime = $sub->created_at->timezone('Asia/Jakarta');
+                                        $isDiffTime = $subTime->format('Y-m-d H:i') !== $parentTime->format('Y-m-d H:i');
+                                        $isDiffDay = ! $subTime->isSameDay($parentTime);
+                                    @endphp
                                     <div
                                         @click="window.copyToClipboard('{{ $sub->reference_number }}', 'Sub-Nomor Surat'); copiedSubId = {{ $sub->id }}; setTimeout(() => copiedSubId = null, 2000)"
                                         class="w-full p-3 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/40 dark:hover:bg-primary-950/30 transition-all cursor-pointer group flex items-center justify-between gap-3 text-left active:scale-[0.99]"
                                         title="Klik untuk menyalin {{ $sub->reference_number }}"
                                     >
-                                        <div class="flex items-center gap-2.5 min-w-0">
+                                        <div class="flex items-center gap-2 min-w-0 flex-wrap">
                                             <span class="font-mono font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors text-xs sm:text-sm truncate select-all">
                                                 {{ $sub->reference_number }}
                                             </span>
+
+                                            @if($isDiffTime)
+                                                <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-700/60 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shrink-0" title="Waktu terbit sub-nomor: {{ $subTime->translatedFormat('d F Y, H:i') }} WIB">
+                                                    <svg class="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 1118 0z" />
+                                                    </svg>
+                                                    <span>
+                                                        @if($isDiffDay)
+                                                            {{ $subTime->translatedFormat('d M Y, H:i') }} WIB
+                                                        @else
+                                                            {{ $subTime->format('H:i') }} WIB
+                                                        @endif
+                                                    </span>
+                                                </span>
+                                            @endif
                                         </div>
 
-                                        <div class="shrink-0">
+                                        <div class="flex items-center gap-2 shrink-0">
                                             <span x-show="copiedSubId === {{ $sub->id }}" class="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1" style="display: none;">
                                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
@@ -438,6 +507,32 @@
                                                 </svg>
                                                 <span class="hidden sm:inline font-medium">Salin</span>
                                             </span>
+
+                                            @if($sub->sub_number === $maxSubNumber)
+                                                <button
+                                                    type="button"
+                                                    @click.stop="
+                                                        window.confirmAction({
+                                                            title: 'Batalkan Sub-Nomor?',
+                                                            text: 'Apakah Anda yakin ingin membatalkan sub-nomor surat {{ $sub->reference_number }}? Tindakan ini akan menghapusnya secara permanen.',
+                                                            icon: 'warning',
+                                                            confirmButtonText: 'Ya, Batalkan',
+                                                            cancelButtonText: 'Tutup',
+                                                            confirmButtonColor: '#dc2626'
+                                                        }).then((res) => {
+                                                            if (res.isConfirmed) {
+                                                                $wire.deleteSubLetter({{ $sub->id }});
+                                                            }
+                                                        });
+                                                    "
+                                                    class="btn btn-ghost btn-xs btn-square text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors p-1"
+                                                    title="Batalkan / Hapus Sub-Nomor Terakhir Ini"
+                                                >
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach
@@ -450,19 +545,43 @@
                     </div>
                 @endif
 
-                <!-- Button Tambah Sub-Nomor Surat di paling bawah modal -->
-                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                <!-- Action Buttons di paling bawah modal -->
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center gap-2.5">
+                    <button
+                        type="button"
+                        @click="
+                            window.confirmAction({
+                                title: 'Batalkan Nomor Surat?',
+                                text: 'Apakah Anda yakin ingin membatalkan nomor surat {{ $selectedLetter->reference_number }}{{ $selectedLetter->subLetters->isNotEmpty() ? ' beserta seluruh (' . $selectedLetter->subLetters->count() . ') sub-nomornya' : '' }}? Data akan dihapus secara permanen.',
+                                icon: 'warning',
+                                confirmButtonText: 'Ya, Batalkan Surat',
+                                cancelButtonText: 'Tutup',
+                                confirmButtonColor: '#dc2626'
+                            }).then((res) => {
+                                if (res.isConfirmed) {
+                                    $wire.deleteLetter({{ $selectedLetter->id }});
+                                }
+                            });
+                        "
+                        class="btn btn-ghost text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl font-bold py-3 h-auto transition-all cursor-pointer w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs sm:text-sm"
+                        title="Batalkan nomor surat ini"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span>Batalkan Surat</span>
+                    </button>
                     <button
                         type="button"
                         wire:click="addSubLetter"
                         wire:loading.attr="disabled"
-                        class="btn btn-primary w-full text-white font-extrabold rounded-xl shadow-md shadow-primary-600/20 py-3 h-auto transition-all cursor-pointer flex items-center justify-center gap-2"
+                        class="btn btn-primary flex-1 w-full text-white font-extrabold rounded-xl shadow-md shadow-primary-600/20 py-3 h-auto transition-all cursor-pointer flex items-center justify-center gap-2"
                     >
                         <span wire:loading.remove wire:target="addSubLetter" class="flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                             </svg>
-                            <span>+ Tambah Sub-Nomor Surat</span>
+                            <span>Tambah Sub-Nomor Surat</span>
                         </span>
                         <span wire:loading wire:target="addSubLetter" class="flex items-center justify-center gap-2">
                             <span class="loading loading-spinner loading-xs"></span>

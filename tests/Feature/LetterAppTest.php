@@ -4,6 +4,7 @@ use App\Livewire\DashboardAdmin;
 use App\Livewire\LetterHistory;
 use App\Livewire\LetterRequestForm;
 use App\Models\Letter;
+use App\Services\LetterNumberService;
 use Database\Seeders\LetterTargetSeeder;
 use Livewire\Livewire;
 
@@ -578,4 +579,89 @@ test('admin cabang dashboard stats and recent letters are strictly filtered to t
         ->assertSee('Surat Dashboard Ketahun')
         ->assertDontSee('Surat Dashboard Pusat SJP 1')
         ->assertDontSee('Akumulasi Surat Per Cabang');
+});
+
+test('LetterHistory automatically opens detail modal when open query parameter is present', function () {
+    $letter = Letter::factory()->create([
+        'branch_code' => 'SJP',
+        'subject' => 'Surat Auto Open Modal',
+        'reference_number' => '999/SJP/IX/2026',
+    ]);
+
+    // Initial load without open param: modal is closed
+    Livewire::test(LetterHistory::class)
+        ->assertSet('showDetailModal', false)
+        ->assertSet('selectedLetter', null);
+
+    // Load with open param: modal is immediately open with correct letter
+    Livewire::withQueryParams(['open' => $letter->id])
+        ->test(LetterHistory::class)
+        ->assertSet('showDetailModal', true)
+        ->assertSet('open', $letter->id)
+        ->assertSee('Detail Nomor Surat')
+        ->assertSee('999/SJP/IX/2026')
+        ->assertSee('Surat Auto Open Modal')
+        ->call('closeDetailModal')
+        ->assertSet('showDetailModal', false)
+        ->assertSet('open', null);
+});
+
+test('dashboard recent letters table displays only parent letters with sub-nomor column and clickable rows', function () {
+    $service = new LetterNumberService;
+
+    // Parent 1 with 2 sub-letters
+    $parent1 = $service->createLetter([
+        'branch_code' => 'SJP',
+        'target_code' => 'IM',
+        'month' => 9,
+        'year' => 2026,
+        'subject' => 'Surat Pengajuan Induk Ada Sub',
+        'requestor_name' => 'Budi',
+        'sub_count' => 2,
+    ]);
+
+    // Parent 2 without sub-letters
+    $parent2 = $service->createLetter([
+        'branch_code' => 'SJP',
+        'target_code' => 'IM',
+        'month' => 9,
+        'year' => 2026,
+        'subject' => 'Surat Pengajuan Induk Tanpa Sub',
+        'requestor_name' => 'Siti',
+    ]);
+
+    $sub1 = $parent1->subLetters()->first();
+
+    Livewire::test(DashboardAdmin::class)
+        ->assertSee('Pengajuan Surat Terkini')
+        ->assertSee('Sub-Nomor')
+        ->assertSee($parent1->reference_number)
+        ->assertSee($parent2->reference_number)
+        ->assertDontSee($sub1->reference_number) // sub-letters must NOT appear as separate rows
+        ->assertSee('2 Sub-Nomor Surat') // badge with count 2 for parent1
+        ->assertSee('-') // dash for parent2
+        ->assertSeeHtml(route('letter.history', ['open' => $parent1->id]))
+        ->assertSeeHtml(route('letter.history', ['open' => $parent2->id]));
+});
+
+test('LetterRequestForm Lihat Riwayat link points to letter history with open parameter of created letter', function () {
+    Livewire::test(LetterRequestForm::class)
+        ->set('branch_code', 'SJP')
+        ->set('target_code', 'IM')
+        ->set('month', 9)
+        ->set('year', 2026)
+        ->set('subject', 'Permohonan Pembelian Alat Berat')
+        ->set('requestor_name', 'Hendra')
+        ->call('submit')
+        ->assertHasNoErrors()
+        ->assertSet('showSuccessModal', true);
+
+    $created = Letter::where('subject', 'Permohonan Pembelian Alat Berat')->first();
+    expect($created)->not->toBeNull();
+
+    Livewire::test(LetterRequestForm::class)
+        ->set('createdLetter', $created)
+        ->set('showSuccessModal', true)
+        ->assertSeeHtml(route('letter.history', ['open' => $created->id]))
+        ->assertSee('Lihat Riwayat');
 });

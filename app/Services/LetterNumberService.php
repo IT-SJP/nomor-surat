@@ -184,7 +184,9 @@ class LetterNumberService
             if ($subCount > 0) {
                 $subCount = min(50, $subCount);
                 for ($i = 1; $i <= $subCount; $i++) {
-                    $this->createNextSubLetter($letter);
+                    $sub = $this->createNextSubLetter($letter);
+                    $sub->created_at = $letter->created_at;
+                    $sub->saveQuietly();
                 }
                 $letter->load('subLetters');
             }

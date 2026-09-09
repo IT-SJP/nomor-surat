@@ -8,6 +8,7 @@ use App\Services\LetterImportService;
 use App\Services\LetterNumberService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -47,6 +48,9 @@ class LetterHistory extends Component
 
     #[Url]
     public string $date = '';
+
+    #[Url]
+    public ?int $open = null;
 
     public int $perPage = 15;
 
@@ -92,6 +96,20 @@ class LetterHistory extends Component
         } elseif ($this->isKaryawan) {
             // Strictly enforce and lock to Karyawan's branch
             $this->branch = $this->userBranch;
+        }
+
+        $openId = $this->open ?: request()->integer('open');
+        if ($openId) {
+            $this->viewLetter($openId);
+        }
+    }
+
+    public function updatedOpen(): void
+    {
+        if ($this->open) {
+            $this->viewLetter($this->open);
+        } else {
+            $this->closeDetailModal();
         }
     }
 
@@ -145,6 +163,9 @@ class LetterHistory extends Component
         $this->selectedLetter = $query->first();
         if ($this->selectedLetter) {
             $this->showDetailModal = true;
+            $this->open = $this->selectedLetter->id;
+        } else {
+            $this->open = null;
         }
     }
 
@@ -152,6 +173,7 @@ class LetterHistory extends Component
     {
         $this->showDetailModal = false;
         $this->selectedLetter = null;
+        $this->open = null;
     }
 
     public function addSubLetter(LetterNumberService $service): void
@@ -173,6 +195,104 @@ class LetterHistory extends Component
             'type' => 'success',
             'title' => 'Sub-Nomor Ditambahkan!',
             'message' => "Sub-nomor registrasi {$subLetter->reference_number} berhasil dibuat.",
+        ]);
+    }
+
+    public function deleteLetter(int $id): void
+    {
+        $query = Letter::query()->where('id', $id);
+        if ($this->isAdminCabang) {
+            $query->where('branch_code', $this->adminBranchCode);
+        } elseif ($this->isKaryawan) {
+            $query->where('branch_code', $this->userBranch);
+        }
+
+        /** @var Letter|null $letter */
+        $letter = $query->first();
+        if (! $letter) {
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Gagal',
+                'message' => 'Nomor surat tidak ditemukan atau Anda tidak memiliki akses.',
+            ]);
+
+            return;
+        }
+
+        $refNumber = $letter->reference_number;
+        $subCount = $letter->subLetters()->count();
+
+        DB::transaction(function () use ($letter) {
+            $letter->subLetters()->delete();
+            $letter->delete();
+        });
+
+        if ($this->selectedLetter && $this->selectedLetter->id === $id) {
+            $this->closeDetailModal();
+        }
+
+        $message = $subCount > 0
+            ? "Nomor surat {$refNumber} beserta {$subCount} sub-nomor surat berhasil dibatalkan dan dihapus."
+            : "Nomor surat {$refNumber} berhasil dibatalkan dan dihapus.";
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Nomor Surat Dibatalkan',
+            'message' => $message,
+        ]);
+    }
+
+    public function deleteSubLetter(int $subId): void
+    {
+        $query = Letter::query()->whereNotNull('parent_id')->where('id', $subId);
+        if ($this->isAdminCabang) {
+            $query->where('branch_code', $this->adminBranchCode);
+        } elseif ($this->isKaryawan) {
+            $query->where('branch_code', $this->userBranch);
+        }
+
+        /** @var Letter|null $subLetter */
+        $subLetter = $query->first();
+        if (! $subLetter) {
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Gagal',
+                'message' => 'Sub-nomor surat tidak ditemukan atau Anda tidak memiliki akses.',
+            ]);
+
+            return;
+        }
+
+        $parentId = $subLetter->parent_id;
+
+        // Validasi: Pembatalan sub-nomor harus dimulai dari angka terbesar/terakhir yang ditambahkan
+        $latestSub = Letter::where('parent_id', $parentId)->orderByDesc('sub_number')->first();
+        if ($latestSub && $subLetter->id !== $latestSub->id) {
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Urutan Tidak Sesuai',
+                'message' => 'Pembatalan sub-nomor harus dimulai dari angka terbesar/terakhir yang ditambahkan.',
+            ]);
+
+            return;
+        }
+
+        $refNumber = $subLetter->reference_number;
+        $subLetter->delete();
+
+        if ($this->selectedLetter) {
+            if ($this->selectedLetter->id === $parentId) {
+                $this->selectedLetter->refresh();
+                $this->selectedLetter->load(['parent', 'subLetters']);
+            } elseif ($this->selectedLetter->id === $subId) {
+                $this->closeDetailModal();
+            }
+        }
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Sub-Nomor Dibatalkan',
+            'message' => "Sub-nomor surat {$refNumber} berhasil dibatalkan dan dihapus.",
         ]);
     }
 
@@ -284,7 +404,7 @@ class LetterHistory extends Component
                     $item->requestor_name,
                     $item->requestor_email ?? '-',
                     $item->requestor_phone ?? '-',
-                    $item->created_at->format('d/m/Y H:i'),
+                    $item->created_at->timezone('Asia/Jakarta')->format('d/m/Y H:i'),
                 ]);
             }
 

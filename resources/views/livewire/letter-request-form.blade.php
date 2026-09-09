@@ -369,7 +369,7 @@
                             <button
                                 type="button"
                                 wire:click="clearSelectedEmployee"
-                                class="btn btn-sm btn-ghost btn-circle text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
+                                class="btn btn-sm btn-ghost btn-square rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
                                 title="Hapus Pilihan"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -636,7 +636,7 @@
                         <span x-text="copiedSuccess ? '✓ Nomor Tersalin!' : 'Salin Nomor Surat'">Salin Nomor Surat</span>
                     </button>
 
-                    <a href="{{ route('letter.history') }}" wire:navigate class="btn btn-outline border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex-1 h-12 text-sm sm:text-base shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <a href="{{ route('letter.history', ['open' => $createdLetter->id]) }}" wire:navigate class="btn btn-outline border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex-1 h-12 text-sm sm:text-base shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>

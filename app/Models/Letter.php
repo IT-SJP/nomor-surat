@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Letter extends Model
 {
@@ -147,14 +148,24 @@ class Letter extends Model
     }
 
     /**
-     * Scope query to filter by date (created_at).
+     * Return created_at converted to Asia/Jakarta (UTC+7 / WIB) timezone.
+     */
+    public function getCreatedAtWibAttribute(): ?Carbon
+    {
+        return $this->created_at?->timezone('Asia/Jakarta');
+    }
+
+    /**
+     * Scope query to filter by date (created_at converted to WIB).
      *
      * @param  Builder<self>  $query
      */
     public function scopeDate($query, ?string $date): void
     {
         if (! empty($date)) {
-            $query->whereDate('created_at', $date);
+            $start = Carbon::parse($date, 'Asia/Jakarta')->startOfDay()->utc();
+            $end = Carbon::parse($date, 'Asia/Jakarta')->endOfDay()->utc();
+            $query->whereBetween('created_at', [$start, $end]);
         }
     }
 }

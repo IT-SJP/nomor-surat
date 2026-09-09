@@ -5,6 +5,7 @@ use App\Livewire\LetterRequestForm;
 use App\Models\Letter;
 use App\Services\LetterNumberService;
 use Database\Seeders\LetterTargetSeeder;
+use Illuminate\Support\Carbon;
 
 beforeEach(function () {
     (new LetterTargetSeeder)->run();
@@ -173,11 +174,11 @@ test('LetterHistory modal detail supports 1-click + Tambah Sub-Nomor Surat', fun
         'requestor_name' => 'Kepala Cabang',
     ]);
 
-    // Open detail modal and click + Tambah Sub-Nomor Surat
+    // Open detail modal and click Tambah Sub-Nomor Surat
     Livewire\Livewire::test(LetterHistory::class)
         ->call('viewLetter', $parent->id)
         ->assertSet('showDetailModal', true)
-        ->assertSee('+ Tambah Sub-Nomor Surat')
+        ->assertSee('Tambah Sub-Nomor Surat')
         ->call('addSubLetter')
         ->assertDispatched('toast');
 
@@ -199,4 +200,154 @@ test('LetterHistory modal detail supports 1-click + Tambah Sub-Nomor Surat', fun
         ->and($sub2->reference_number)->toBe('001.2/IM/SJP/V/2026');
 
     expect(Letter::where('parent_id', $parent->id)->count())->toBe(2);
+});
+
+test('LetterHistory requires LIFO deletion for sub-letters starting from largest/latest number and displays Salin Semua Sub-Nomor button', function () {
+    $service = new LetterNumberService;
+
+    $parent = $service->createLetter([
+        'branch_code' => 'SJP',
+        'target_code' => 'IM',
+        'month' => 6,
+        'year' => 2026,
+        'subject' => 'Surat Uji Hapus Sub LIFO',
+        'requestor_name' => 'Admin Testing',
+        'sub_count' => 3,
+    ]);
+
+    $subs = $parent->subLetters()->orderBy('sub_number')->get();
+    expect($subs)->toHaveCount(3);
+
+    $sub1 = $subs[0];
+    $sub2 = $subs[1];
+    $sub3 = $subs[2];
+
+    // Detail modal shows "Salin Semua Sub-Nomor" button and sub-letters
+    Livewire\Livewire::test(LetterHistory::class)
+        ->call('viewLetter', $parent->id)
+        ->assertSee('Salin Semua Sub-Nomor')
+        ->assertSee($sub1->reference_number)
+        ->assertSee($sub2->reference_number)
+        ->assertSee($sub3->reference_number);
+
+    // Attempting to delete sub1 (not the latest) should fail due to LIFO rule
+    Livewire\Livewire::test(LetterHistory::class)
+        ->call('viewLetter', $parent->id)
+        ->call('deleteSubLetter', $sub1->id)
+        ->assertDispatched('toast', function ($event, $params) {
+            $data = is_array($params) && isset($params[0]) && is_array($params[0]) ? $params[0] : $params;
+
+            return ($data['type'] ?? '') === 'error' && ($data['title'] ?? '') === 'Urutan Tidak Sesuai';
+        });
+
+    expect(Letter::find($sub1->id))->not->toBeNull()
+        ->and(Letter::where('parent_id', $parent->id)->count())->toBe(3);
+
+    // Deleting sub3 (the largest/latest) should succeed
+    Livewire\Livewire::test(LetterHistory::class)
+        ->call('viewLetter', $parent->id)
+        ->call('deleteSubLetter', $sub3->id)
+        ->assertDispatched('toast', function ($event, $params) {
+            $data = is_array($params) && isset($params[0]) && is_array($params[0]) ? $params[0] : $params;
+
+            return ($data['type'] ?? '') === 'success' && ($data['title'] ?? '') === 'Sub-Nomor Dibatalkan';
+        });
+
+    expect(Letter::find($sub3->id))->toBeNull()
+        ->and(Letter::where('parent_id', $parent->id)->count())->toBe(2);
+
+    // Now sub2 is the largest, deleting sub2 should succeed
+    Livewire\Livewire::test(LetterHistory::class)
+        ->call('viewLetter', $parent->id)
+        ->call('deleteSubLetter', $sub2->id)
+        ->assertDispatched('toast', function ($event, $params) {
+            $data = is_array($params) && isset($params[0]) && is_array($params[0]) ? $params[0] : $params;
+
+            return ($data['type'] ?? '') === 'success';
+        });
+
+    expect(Letter::find($sub2->id))->toBeNull()
+        ->and(Letter::where('parent_id', $parent->id)->count())->toBe(1);
+
+    // Now sub1 is the only one remaining, deleting sub1 should succeed
+    Livewire\Livewire::test(LetterHistory::class)
+        ->call('viewLetter', $parent->id)
+        ->call('deleteSubLetter', $sub1->id)
+        ->assertDispatched('toast', function ($event, $params) {
+            $data = is_array($params) && isset($params[0]) && is_array($params[0]) ? $params[0] : $params;
+
+            return ($data['type'] ?? '') === 'success';
+        });
+
+    expect(Letter::find($sub1->id))->toBeNull()
+        ->and(Letter::where('parent_id', $parent->id)->count())->toBe(0)
+        ->and(Letter::find($parent->id))->not->toBeNull();
+});
+
+test('LetterHistory can cancel/delete parent letter along with all its sub-letters', function () {
+    $service = new LetterNumberService;
+
+    $parent = $service->createLetter([
+        'branch_code' => 'SJP',
+        'target_code' => 'IM',
+        'month' => 7,
+        'year' => 2026,
+        'subject' => 'Surat Uji Hapus Induk',
+        'requestor_name' => 'Admin Testing',
+        'sub_count' => 3,
+    ]);
+
+    expect(Letter::where('parent_id', $parent->id)->count())->toBe(3);
+
+    Livewire\Livewire::test(LetterHistory::class)
+        ->call('deleteLetter', $parent->id)
+        ->assertDispatched('toast');
+
+    // Parent and all 3 sub letters are deleted
+    expect(Letter::find($parent->id))->toBeNull()
+        ->and(Letter::where('parent_id', $parent->id)->count())->toBe(0);
+});
+
+test('LetterHistory displays publish time for sub-letters only when different from parent, with date if different day', function () {
+    $service = new LetterNumberService;
+
+    // Parent created at 2026-09-09 08:00:00
+    $parent = $service->createLetter([
+        'branch_code' => 'SJP',
+        'target_code' => 'IM',
+        'month' => 9,
+        'year' => 2026,
+        'subject' => 'Surat Uji Waktu Terbit Sub',
+        'requestor_name' => 'Admin Waktu',
+        'sub_count' => 1,
+    ]);
+
+    $parent->created_at = Carbon::parse('2026-09-09 08:00:00', 'Asia/Jakarta')->utc();
+    $parent->saveQuietly();
+
+    // Sub 1: Same time as parent (08:00 WIB)
+    $sub1 = $parent->subLetters()->first();
+    $sub1->created_at = Carbon::parse('2026-09-09 08:00:00', 'Asia/Jakarta')->utc();
+    $sub1->saveQuietly();
+
+    // Sub 2: Same day, different time (11:30 WIB)
+    $sub2 = $service->createNextSubLetter($parent);
+    $sub2->created_at = Carbon::parse('2026-09-09 11:30:00', 'Asia/Jakarta')->utc();
+    $sub2->saveQuietly();
+
+    // Sub 3: Different day (12 Sep 2026, 15:45 WIB)
+    $sub3 = $service->createNextSubLetter($parent);
+    $sub3->created_at = Carbon::parse('2026-09-12 15:45:00', 'Asia/Jakarta')->utc();
+    $sub3->saveQuietly();
+
+    Livewire\Livewire::test(LetterHistory::class)
+        ->call('viewLetter', $parent->id)
+        ->assertSet('showDetailModal', true)
+        ->assertSee($sub1->reference_number)
+        ->assertSee($sub2->reference_number)
+        ->assertSee($sub3->reference_number)
+        // Sub 2 shows only time because it is on the same day
+        ->assertSee('11:30 WIB')
+        // Sub 3 shows concrete date and time because it is on a different day
+        ->assertSee('12 Sep 2026, 15:45 WIB');
 });
