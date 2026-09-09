@@ -48,10 +48,10 @@ CSV;
             ->and($letter2->reference_number)->toBe('002/BNi/SJP/I/2026')
             ->and($letter2->requestor_name)->toBe('Ana Faizah');
 
-        // Month 2 sequence resets to 1
-        $letter3 = Letter::where('sequence_number', 1)->where('month', 2)->first();
+        // Month 2 sequence continues to 3 (annual continuous sequence)
+        $letter3 = Letter::where('sequence_number', 3)->where('month', 2)->first();
         expect($letter3)->not->toBeNull()
-            ->and($letter3->reference_number)->toBe('001/BRI/SJP/II/2026')
+            ->and($letter3->reference_number)->toBe('003/BRI/SJP/II/2026')
             ->and($letter3->month_roman)->toBe('II');
     } finally {
         if (file_exists($tempPath)) {
@@ -61,24 +61,40 @@ CSV;
 });
 
 test('letter:import-csv artisan command executes successfully with dry-run and actual import', function () {
-    $filePath = 'storage/app/letters_initial_import.csv';
+    $tempPath = tempnam(sys_get_temp_dir(), 'test_artisan_csv_');
+    $csvContent = <<<'CSV'
+No,Timestamp,Nomor Surat,Kode Perusahaan,Kode Tujuan,Bulan,Tahun,Perihal,Tujuan,Letak Arsip,Requestor
+1,"2/1/2026, 09.43.45",SJP/I/2026/001,SJP,HRD-IN,I,2026,Perhentian sementara operasional,Internal,HR,HR
+2,"2/2/2026, 11.11.51",SJP/II/2026/001,SJP,BRI,II,2026,Surat Pemberitahuan Kontrak,EXT,Legal,Agustin
+CSV;
+    file_put_contents($tempPath, $csvContent);
 
-    // 1. Dry run
-    $exitCodeDry = Artisan::call('letter:import-csv', [
-        'file' => $filePath,
-        '--dry-run' => true,
-    ]);
+    try {
+        // 1. Dry run
+        $exitCodeDry = Artisan::call('letter:import-csv', [
+            'file' => $tempPath,
+            '--dry-run' => true,
+        ]);
 
-    expect($exitCodeDry)->toBe(0)
-        ->and(Letter::count())->toBe(0);
+        expect($exitCodeDry)->toBe(0)
+            ->and(Letter::count())->toBe(0);
 
-    // 2. Real import
-    $exitCodeReal = Artisan::call('letter:import-csv', [
-        'file' => $filePath,
-    ]);
+        // 2. Real import
+        $exitCodeReal = Artisan::call('letter:import-csv', [
+            'file' => $tempPath,
+        ]);
 
-    expect($exitCodeReal)->toBe(0)
-        ->and(Letter::count())->toBe(316);
+        expect($exitCodeReal)->toBe(0)
+            ->and(Letter::count())->toBe(2);
+
+        $l2 = Letter::where('sequence_number', 2)->first();
+        expect($l2)->not->toBeNull()
+            ->and($l2->reference_number)->toBe('002/BRI/SJP/II/2026');
+    } finally {
+        if (file_exists($tempPath)) {
+            unlink($tempPath);
+        }
+    }
 });
 
 test('administrator can view import CSV button and trigger import modal on letter history', function () {

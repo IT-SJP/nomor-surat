@@ -20,7 +20,7 @@ class LetterImportService
     protected array $branchNameCache = [];
 
     /**
-     * Cache for sequence counters keyed by "{branch_code}_{year}_{month}".
+     * Cache for sequence counters keyed by "{branch_code}_{year}".
      *
      * @var array<string, int>
      */
@@ -247,13 +247,12 @@ class LetterImportService
         $rawTarget = trim((string) ($row[$map['target_code'] ?? 4] ?? ''));
         $targetCode = trim($rawTarget, "/ \t\n\r\0\x0B");
 
-        // 5. Sequence number and Reference number
-        $seqKey = "{$branchCode}_{$year}_{$month}";
+        // 5. Sequence number and Reference number (annual reset, continuous across months)
+        $seqKey = "{$branchCode}_{$year}";
         if (! isset($this->sequenceCounters[$seqKey])) {
             $maxExisting = Letter::query()
                 ->where('branch_code', $branchCode)
                 ->where('year', $year)
-                ->where('month', $month)
                 ->max('sequence_number') ?? 0;
             $this->sequenceCounters[$seqKey] = (int) $maxExisting;
         }

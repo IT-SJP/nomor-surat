@@ -82,7 +82,7 @@ test('increments sequence within the same month and year', function () {
         ->and($letter2->sequence_number)->toBe(2);
 });
 
-test('resets sequence to 001 for different months or branches', function () {
+test('continues sequence across months in same year, separates branches, and resets on new year', function () {
     $service = new LetterNumberService;
 
     // SJP Month 1
@@ -96,7 +96,7 @@ test('resets sequence to 001 for different months or branches', function () {
         'requestor_name' => 'User',
     ]);
 
-    // SJP Month 2 (should reset to 001)
+    // SJP Month 2 (should continue sequence to 002 with Roman numeral II)
     $sjpFeb = $service->createLetter([
         'branch_code' => 'SJP',
         'target_code' => 'IM',
@@ -107,7 +107,7 @@ test('resets sequence to 001 for different months or branches', function () {
         'requestor_name' => 'User',
     ]);
 
-    // CSI Month 1 (different branch, should reset to 001)
+    // CSI Month 1 (different branch, should start at 001)
     $csiJan = $service->createLetter([
         'branch_code' => 'CSI',
         'target_code' => 'NonStandard',
@@ -118,9 +118,25 @@ test('resets sequence to 001 for different months or branches', function () {
         'requestor_name' => 'User',
     ]);
 
+    // SJP Next Year 2027 Month 1 (new year, should reset to 001)
+    $sjpNextYear = $service->createLetter([
+        'branch_code' => 'SJP',
+        'target_code' => 'IM',
+        'month' => 1,
+        'year' => 2027,
+        'subject' => 'Surat SJP Jan 2027',
+        'purpose' => 'Test',
+        'requestor_name' => 'User',
+    ]);
+
     expect($sjpJan->reference_number)->toBe('001/IM/SJP/I/2026')
-        ->and($sjpFeb->reference_number)->toBe('001/IM/SJP/II/2026')
-        ->and($csiJan->reference_number)->toBe('001/CSI/I/2026');
+        ->and($sjpJan->sequence_number)->toBe(1)
+        ->and($sjpFeb->reference_number)->toBe('002/IM/SJP/II/2026')
+        ->and($sjpFeb->sequence_number)->toBe(2)
+        ->and($csiJan->reference_number)->toBe('001/CSI/I/2026')
+        ->and($csiJan->sequence_number)->toBe(1)
+        ->and($sjpNextYear->reference_number)->toBe('001/IM/SJP/I/2027')
+        ->and($sjpNextYear->sequence_number)->toBe(1);
 });
 
 test('previews next letter number accurately with standard target and without standard target', function () {

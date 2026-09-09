@@ -130,11 +130,10 @@ class LetterNumberService
             $year = (int) $data['year'];
             $monthRoman = self::monthToRoman($month);
 
-            // Lock and get the highest sequence number in this branch, month, and year
+            // Lock and get the highest sequence number in this branch and year (annual reset, continuous across months)
             $latestLetter = Letter::query()
                 ->where('branch_code', $branchCode)
                 ->where('year', $year)
-                ->where('month', $month)
                 ->lockForUpdate()
                 ->orderByDesc('sequence_number')
                 ->first();
@@ -194,7 +193,6 @@ class LetterNumberService
         $maxSeq = Letter::query()
             ->where('branch_code', $branchCode)
             ->where('year', $year)
-            ->where('month', $month)
             ->max('sequence_number') ?? 0;
 
         $nextSeq = str_pad((string) ($maxSeq + 1), 3, '0', STR_PAD_LEFT);
