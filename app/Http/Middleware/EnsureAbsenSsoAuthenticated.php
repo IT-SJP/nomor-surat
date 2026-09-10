@@ -22,7 +22,7 @@ class EnsureAbsenSsoAuthenticated
                 ], 403);
             }
 
-            return response()->view('errors.access-denied', [
+            return response()->view('errors.403', [
                 'reason' => 'Sesi tidak ditemukan. Anda harus login terlebih dahulu di aplikasi Absenku SJP.',
             ], 403);
         }

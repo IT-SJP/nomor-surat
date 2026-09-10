@@ -6,8 +6,9 @@ use Illuminate\Support\Facades\Config;
 test('unauthenticated users are rejected with 403 access denied screen', function () {
     $response = $this->get('/');
     $response->assertStatus(403);
-    $response->assertSee('Portal Nomor Surat Internal');
-    $response->assertSee('Akses Terkunci (403)');
+    $response->assertSee('Akses Tidak Diizinkan');
+    $response->assertSee('403 FORBIDDEN');
+    $response->assertSee('Sesi tidak ditemukan. Anda harus login terlebih dahulu di aplikasi Absenku SJP.');
 });
 
 test('sso verification fails if token or signature is missing', function () {
