@@ -30,6 +30,16 @@ class BranchManagement extends Component
 
     public ?string $adminBranchName = null;
 
+    public bool $showAddModal = false;
+
+    public string $newBranchName = '';
+
+    public string $newBranchCode = '';
+
+    public string $newBranchHrCode = '';
+
+    public bool $newBranchIsActive = true;
+
     public function updatedPerPage(): void
     {
         $this->resetPage();
@@ -303,6 +313,67 @@ class BranchManagement extends Component
             'type' => 'success',
             'title' => 'Cabang Dihapus',
             'message' => "Cabang {$branchName} berhasil dihapus dari sistem nomor surat (data di database Absenku tetap aman).",
+        ]);
+    }
+
+    public function openAddModal(): void
+    {
+        if (! $this->canManageBranches || $this->isAdminCabang) {
+            return;
+        }
+
+        $this->reset(['newBranchName', 'newBranchCode', 'newBranchHrCode']);
+        $this->newBranchIsActive = true;
+        $this->resetValidation();
+        $this->showAddModal = true;
+    }
+
+    public function closeAddModal(): void
+    {
+        $this->showAddModal = false;
+        $this->reset(['newBranchName', 'newBranchCode', 'newBranchHrCode']);
+        $this->newBranchIsActive = true;
+        $this->resetValidation();
+    }
+
+    public function saveNewBranch(): void
+    {
+        if (! $this->canManageBranches || $this->isAdminCabang) {
+            return;
+        }
+
+        $this->newBranchCode = strtoupper(trim($this->newBranchCode));
+        $this->newBranchName = trim($this->newBranchName);
+        $this->newBranchHrCode = strtoupper(trim($this->newBranchHrCode));
+
+        $this->validate([
+            'newBranchName' => 'required|string|min:2|max:255',
+            'newBranchCode' => 'required|string|min:2|max:50|unique:branches,branch_code',
+            'newBranchHrCode' => 'nullable|string|max:50|unique:branches,hr_code',
+        ], [
+            'newBranchName.required' => 'Nama cabang / entitas wajib diisi.',
+            'newBranchName.min' => 'Nama cabang minimal 2 karakter.',
+            'newBranchCode.required' => 'Kode surat resmi cabang wajib diisi.',
+            'newBranchCode.unique' => 'Kode surat resmi sudah digunakan oleh cabang lain.',
+            'newBranchHrCode.unique' => 'Kode cabang absen (HR code) sudah digunakan.',
+        ]);
+
+        $branch = Branch::create([
+            'name' => $this->newBranchName,
+            'branch_code' => $this->newBranchCode,
+            'hr_code' => ! empty($this->newBranchHrCode) ? $this->newBranchHrCode : null,
+            'is_active' => $this->newBranchIsActive,
+        ]);
+
+        $this->closeAddModal();
+        $this->resetPage();
+
+        session()->flash('status', "Cabang {$branch->name} ({$branch->branch_code}) berhasil ditambahkan.");
+
+        $this->dispatch('toast', [
+            'type' => 'success',
+            'title' => 'Cabang Ditambahkan',
+            'message' => "Cabang {$branch->name} ({$branch->branch_code}) berhasil ditambahkan ke sistem nomor surat.",
         ]);
     }
 

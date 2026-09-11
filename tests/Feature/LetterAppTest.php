@@ -1,8 +1,11 @@
 <?php
 
+use App\Livewire\BranchManagement;
 use App\Livewire\DashboardAdmin;
 use App\Livewire\LetterHistory;
 use App\Livewire\LetterRequestForm;
+use App\Models\Absen\Cabang;
+use App\Models\Branch;
 use App\Models\Letter;
 use App\Services\LetterNumberService;
 use Database\Seeders\LetterTargetSeeder;
@@ -120,7 +123,7 @@ test('clears validation error immediately when selectTarget is called and displa
         ->assertDontSee('Tujuan / instansi penerima surat wajib diisi.');
 });
 
-test('can lock branch when employee is selected in admin mode', function () {
+test('employee selection does not change or lock publishing branch in admin mode', function () {
     $employeeMock = [
         'id' => 'mock-hash-id-123',
         'name' => 'Dewi Sartika',
@@ -133,12 +136,13 @@ test('can lock branch when employee is selected in admin mode', function () {
     ];
 
     Livewire::test(LetterRequestForm::class)
+        ->set('branch_code', 'SJP')
         ->call('selectEmployee', $employeeMock)
         ->assertSet('requestor_name', 'Dewi Sartika')
         ->assertSet('requestor_department', 'Finance Dept')
         ->assertSet('requestor_position', 'Finance Staff')
-        ->assertSet('branch_code', 'CSI')
-        ->assertSet('isBranchLocked', true);
+        ->assertSet('branch_code', 'SJP')
+        ->assertSet('isBranchLocked', false);
 });
 
 test('admin can search employees in realtime and select an employee with select2 style without exposing NIK', function () {
@@ -385,7 +389,7 @@ test('app css contains mobile scroll lock override for daisyui drawer-toggle', f
         ->toContain('overflow-y: auto');
 });
 
-test('admin cabang has branch auto-locked and employees scoped to their own branch', function () {
+test('admin cabang can pick any branch in request form and employees scoped to their own branch', function () {
     $this->withSession([
         'auth_sso' => [
             'type' => 'admin cabang',
@@ -399,28 +403,30 @@ test('admin cabang has branch auto-locked and employees scoped to their own bran
     ]);
 
     $response = $this->get(route('letter.request'));
-    $response->assertOk()
-        ->assertSee('KTN01 — Cabang Ketahun');
+    $response->assertOk();
 
     Livewire::test(LetterRequestForm::class)
         ->assertSet('isAdminCabang', true)
-        ->assertSet('isBranchLocked', true)
+        ->assertSet('isBranchLocked', false)
         ->assertSet('branch_code', 'KTN01')
         ->assertSet('branch_name', 'Cabang Ketahun');
 });
 
-test('admin cabang only sees their own branch letters and branch filter is locked in letter history', function () {
+test('admin cabang can view all branch letters with sensitive fields masked for other branches', function () {
     Letter::factory()->create([
         'branch_code' => 'KTN01',
         'subject' => 'Surat Khusus Ketahun',
+        'target_code' => 'IM',
     ]);
     Letter::factory()->create([
         'branch_code' => 'SJP',
         'subject' => 'Surat Milik Pusat SJP',
+        'target_code' => 'EK',
     ]);
     Letter::factory()->create([
         'branch_code' => 'JMB01',
         'subject' => 'Surat Milik Jambi',
+        'target_code' => 'DN',
     ]);
 
     $this->withSession([
@@ -440,14 +446,10 @@ test('admin cabang only sees their own branch letters and branch filter is locke
         ->assertSet('isAdminCabang', true)
         ->assertSet('branch', 'KTN01')
         ->assertSee('Surat Khusus Ketahun')
+        ->set('branch', '')
+        ->assertSee('Surat Khusus Ketahun')
         ->assertDontSee('Surat Milik Pusat SJP')
-        ->assertDontSee('Surat Milik Jambi')
-        // Try to tamper branch filter to SJP
-        ->set('branch', 'SJP')
-        ->assertSet('branch', 'KTN01')
-        // Reset filters also keeps branch locked
-        ->call('resetFilters')
-        ->assertSet('branch', 'KTN01');
+        ->assertSee('••••••••••••');
 });
 
 test('admin cabang only exports their own branch letters via CSV export', function () {
@@ -664,4 +666,93 @@ test('LetterRequestForm Lihat Riwayat link points to letter history with open pa
         ->set('showSuccessModal', true)
         ->assertSeeHtml(route('letter.history', ['open' => $created->id]))
         ->assertSee('Lihat Riwayat');
+});
+
+test('admin can add custom branch outside HRIS and it persists in active branches', function () {
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin',
+            'role' => 'administrator',
+            'admin_role' => 'administrator',
+            'name' => 'Super Admin',
+        ],
+    ]);
+
+    Livewire::test(BranchManagement::class)
+        ->call('openAddModal')
+        ->assertSet('showAddModal', true)
+        ->set('newBranchName', 'Cabang Khusus IKN')
+        ->set('newBranchCode', 'IKN01')
+        ->call('saveNewBranch')
+        ->assertHasNoErrors()
+        ->assertSet('showAddModal', false);
+
+    $branch = Branch::where('branch_code', 'IKN01')->first();
+    expect($branch)->not->toBeNull();
+    expect($branch->name)->toBe('Cabang Khusus IKN');
+    expect($branch->hr_code)->toBeNull();
+    expect($branch->is_active)->toBeTrue();
+
+    $activeBranches = Cabang::getActiveBranches();
+    expect($activeBranches->pluck('code')->all())->toContain('IKN01');
+});
+
+test('requestor selection does not overwrite or lock the publishing branch', function () {
+    Livewire::test(LetterRequestForm::class)
+        ->set('branch_code', 'SJP')
+        ->call('selectEmployee', [
+            'id' => 'EMP-001',
+            'name' => 'Budi Santoso',
+            'branch_code' => 'BDG01',
+            'branch_name' => 'Cabang Bandung',
+            'email' => 'budi@example.com',
+            'phone' => '08123456789',
+            'department' => 'Operasional',
+            'position' => 'Staff',
+        ])
+        ->assertSet('branch_code', 'SJP') // Still SJP, not overwritten by employee branch
+        ->assertSet('requestor_name', 'Budi Santoso')
+        ->assertSet('isBranchLocked', false);
+});
+
+test('super admin and hrd are never masked in letter history', function () {
+    Letter::factory()->create([
+        'branch_code' => 'KTN01',
+        'subject' => 'Surat Rahasia Cabang Lain',
+        'purpose' => 'Keperluan Rahasia',
+        'target_code' => 'IM',
+        'requestor_name' => 'Karyawan Ketahun',
+    ]);
+
+    // Test as Super Admin
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin',
+            'role' => 'super admin',
+            'admin_role' => 'super admin',
+            'name' => 'Direktur Utama',
+        ],
+    ]);
+
+    Livewire::test(LetterHistory::class)
+        ->set('branch', '')
+        ->assertSee('Surat Rahasia Cabang Lain')
+        ->assertSee('Keperluan Rahasia')
+        ->assertDontSee('••••••••••••');
+
+    // Test as HRD
+    $this->withSession([
+        'auth_sso' => [
+            'type' => 'admin',
+            'role' => 'hrd',
+            'admin_role' => 'hrd',
+            'name' => 'HR Pusat',
+        ],
+    ]);
+
+    Livewire::test(LetterHistory::class)
+        ->set('branch', '')
+        ->assertSee('Surat Rahasia Cabang Lain')
+        ->assertSee('Keperluan Rahasia')
+        ->assertDontSee('••••••••••••');
 });

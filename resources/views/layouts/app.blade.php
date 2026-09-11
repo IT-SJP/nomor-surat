@@ -89,7 +89,7 @@
             <nav class="navbar w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-3 sm:px-5 py-2 sticky top-0 z-30 transition-colors duration-150">
                 <!-- Desktop Sidebar Toggle (Hidden on mobile because mobile uses bottom dock) -->
                 <div class="flex-none hidden lg:block">
-                    <label for="main-drawer" aria-label="Toggle sidebar" class="btn btn-square btn-ghost text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 drawer-button cursor-pointer">
+                    <label for="main-drawer" aria-label="Toggle sidebar" class="btn btn-square btn-ghost rounded-lg text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 drawer-button cursor-pointer">
                         <!-- Sidebar toggle icon (rotates smoothly based on drawer state) -->
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor" class="size-5 transition-transform duration-300" :class="{ 'rotate-180': !sidebarOpen }">
                             <path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>

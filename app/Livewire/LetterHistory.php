@@ -120,11 +120,6 @@ class LetterHistory extends Component
 
     public function updatedBranch(): void
     {
-        if ($this->isAdminCabang) {
-            $this->branch = $this->adminBranchCode;
-        } elseif ($this->isKaryawan) {
-            $this->branch = $this->userBranch;
-        }
         $this->resetPage();
     }
 
@@ -140,27 +135,13 @@ class LetterHistory extends Component
 
     public function resetFilters(): void
     {
-        $this->reset(['search', 'date']);
-        if ($this->isAdminCabang) {
-            $this->branch = $this->adminBranchCode;
-        } elseif ($this->isKaryawan) {
-            $this->branch = $this->userBranch;
-        } else {
-            $this->reset('branch');
-        }
+        $this->reset(['search', 'date', 'branch']);
         $this->resetPage();
     }
 
     public function viewLetter(int $id): void
     {
-        $query = Letter::query()->with(['parent', 'subLetters'])->where('id', $id);
-        if ($this->isAdminCabang) {
-            $query->where('branch_code', $this->adminBranchCode);
-        } elseif ($this->isKaryawan) {
-            $query->where('branch_code', $this->userBranch);
-        }
-
-        $this->selectedLetter = $query->first();
+        $this->selectedLetter = Letter::query()->with(['parent', 'subLetters'])->find($id);
         if ($this->selectedLetter) {
             $this->showDetailModal = true;
             $this->open = $this->selectedLetter->id;
@@ -179,6 +160,16 @@ class LetterHistory extends Component
     public function addSubLetter(LetterNumberService $service): void
     {
         if (! $this->selectedLetter) {
+            return;
+        }
+
+        if ($this->isLetterMasked($this->selectedLetter)) {
+            $this->dispatch('toast', [
+                'type' => 'error',
+                'title' => 'Akses Ditolak',
+                'message' => 'Anda tidak memiliki akses untuk menambahkan sub-nomor pada surat ini.',
+            ]);
+
             return;
         }
 
@@ -202,9 +193,37 @@ class LetterHistory extends Component
     {
         $query = Letter::query()->where('id', $id);
         if ($this->isAdminCabang) {
-            $query->where('branch_code', $this->adminBranchCode);
+            $adminCodes = array_values(array_filter([$this->adminBranchCode, $this->adminBranchHrCode]));
+            $sso = session('auth_sso', []);
+            $userName = (string) ($sso['name'] ?? '');
+            $userEmail = (string) ($sso['email'] ?? '');
+            $query->where(function ($q) use ($adminCodes, $userName, $userEmail) {
+                if (! empty($adminCodes)) {
+                    $q->whereIn('branch_code', $adminCodes);
+                }
+                if (! empty($userName)) {
+                    $q->orWhere('requestor_name', $userName);
+                }
+                if (! empty($userEmail)) {
+                    $q->orWhere('requestor_email', $userEmail);
+                }
+            });
         } elseif ($this->isKaryawan) {
-            $query->where('branch_code', $this->userBranch);
+            $sso = session('auth_sso', []);
+            $userName = (string) ($sso['name'] ?? '');
+            $userEmail = (string) ($sso['email'] ?? '');
+            $userBranchCodes = array_values(array_filter([$this->userBranch, (string) ($sso['raw_branch_code'] ?? '')]));
+            $query->where(function ($q) use ($userName, $userEmail, $userBranchCodes) {
+                if (! empty($userBranchCodes)) {
+                    $q->whereIn('branch_code', $userBranchCodes);
+                }
+                if (! empty($userName)) {
+                    $q->orWhere('requestor_name', $userName);
+                }
+                if (! empty($userEmail)) {
+                    $q->orWhere('requestor_email', $userEmail);
+                }
+            });
         }
 
         /** @var Letter|null $letter */
@@ -249,9 +268,37 @@ class LetterHistory extends Component
     {
         $query = Letter::query()->whereNotNull('parent_id')->where('id', $subId);
         if ($this->isAdminCabang) {
-            $query->where('branch_code', $this->adminBranchCode);
+            $adminCodes = array_values(array_filter([$this->adminBranchCode, $this->adminBranchHrCode]));
+            $sso = session('auth_sso', []);
+            $userName = (string) ($sso['name'] ?? '');
+            $userEmail = (string) ($sso['email'] ?? '');
+            $query->where(function ($q) use ($adminCodes, $userName, $userEmail) {
+                if (! empty($adminCodes)) {
+                    $q->whereIn('branch_code', $adminCodes);
+                }
+                if (! empty($userName)) {
+                    $q->orWhere('requestor_name', $userName);
+                }
+                if (! empty($userEmail)) {
+                    $q->orWhere('requestor_email', $userEmail);
+                }
+            });
         } elseif ($this->isKaryawan) {
-            $query->where('branch_code', $this->userBranch);
+            $sso = session('auth_sso', []);
+            $userName = (string) ($sso['name'] ?? '');
+            $userEmail = (string) ($sso['email'] ?? '');
+            $userBranchCodes = array_values(array_filter([$this->userBranch, (string) ($sso['raw_branch_code'] ?? '')]));
+            $query->where(function ($q) use ($userName, $userEmail, $userBranchCodes) {
+                if (! empty($userBranchCodes)) {
+                    $q->whereIn('branch_code', $userBranchCodes);
+                }
+                if (! empty($userName)) {
+                    $q->orWhere('requestor_name', $userName);
+                }
+                if (! empty($userEmail)) {
+                    $q->orWhere('requestor_email', $userEmail);
+                }
+            });
         }
 
         /** @var Letter|null $subLetter */
@@ -355,11 +402,73 @@ class LetterHistory extends Component
         $this->reset('csvFile');
     }
 
+    /**
+     * Tentukan apakah detail surat (perihal, keperluan, tujuan) perlu disensor untuk pengguna saat ini.
+     * Aturan:
+     * - Berlaku khusus untuk role Karyawan dan Admin Cabang.
+     * - Role selain kedua role tersebut (Super Admin / Administrator / HRD) TIDAK disensor sama sekali.
+     * - Untuk Karyawan & Admin Cabang: disensor jika surat berasal dari cabang lain DAN bukan diajukan oleh pengguna tersebut.
+     */
+    public function isLetterMasked(Letter $letter): bool
+    {
+        // Role selain Karyawan dan Admin Cabang (Super Admin, Administrator, HRD) TIDAK disensor sama sekali.
+        if ($this->isAdmin && ! $this->isAdminCabang) {
+            return false;
+        }
+
+        if (! $this->isKaryawan && ! $this->isAdminCabang) {
+            return false;
+        }
+
+        $sso = session('auth_sso', []);
+        $userName = strtolower(trim((string) ($sso['name'] ?? '')));
+        $userEmail = strtolower(trim((string) ($sso['email'] ?? '')));
+        $userPhone = trim((string) ($sso['phone'] ?? $sso['no_hp'] ?? ''));
+
+        // 1. Cek kepemilikan pemohon: jika surat diajukan oleh user ini, jangan disensor
+        $reqName = strtolower(trim((string) $letter->requestor_name));
+        $reqEmail = strtolower(trim((string) $letter->requestor_email));
+        $reqPhone = trim((string) $letter->requestor_phone);
+
+        if (! empty($userName) && $reqName === $userName) {
+            return false;
+        }
+        if (! empty($userEmail) && $reqEmail === $userEmail) {
+            return false;
+        }
+        if (! empty($userPhone) && $reqPhone === $userPhone) {
+            return false;
+        }
+
+        // 2. Cek cabang asal: jika surat berasal dari cabang asal user ini, jangan disensor
+        $letterBranchCode = strtoupper(trim((string) $letter->branch_code));
+
+        if ($this->isAdminCabang) {
+            $adminCode = strtoupper(trim((string) $this->adminBranchCode));
+            $adminHrCode = strtoupper(trim((string) $this->adminBranchHrCode));
+            if (! empty($adminCode) && $letterBranchCode === $adminCode) {
+                return false;
+            }
+            if (! empty($adminHrCode) && $letterBranchCode === $adminHrCode) {
+                return false;
+            }
+        } elseif ($this->isKaryawan) {
+            $userCode = strtoupper(trim((string) $this->userBranch));
+            $userHrCode = strtoupper(trim((string) ($sso['raw_branch_code'] ?? '')));
+            if (! empty($userCode) && $letterBranchCode === $userCode) {
+                return false;
+            }
+            if (! empty($userHrCode) && $letterBranchCode === $userHrCode) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function exportCsv(): StreamedResponse
     {
-        $effectiveBranch = $this->isAdminCabang
-            ? $this->adminBranchCode
-            : ($this->isKaryawan ? $this->userBranch : $this->branch);
+        $effectiveBranch = $this->branch;
 
         $letters = Letter::query()
             ->search($this->search)
@@ -398,15 +507,20 @@ class LetterHistory extends Component
             ]);
 
             foreach ($letters as $index => $item) {
+                $isMasked = $this->isLetterMasked($item);
+                $subject = $isMasked ? '••••••••••••' : $item->subject;
+                $purpose = $isMasked ? '••••••••••••' : ($item->purpose ?: '-');
+                $target = $isMasked ? '••••••••' : $item->target_code;
+
                 fputcsv($handle, [
                     $index + 1,
                     $item->reference_number,
                     $item->branch_code,
-                    $item->target_code,
+                    $target,
                     $item->month_roman,
                     $item->year,
-                    $item->subject,
-                    $item->purpose ?: '-',
+                    $subject,
+                    $purpose,
                     $item->archive_location ?? '-',
                     $item->requestor_name,
                     $item->requestor_email ?? '-',
@@ -424,24 +538,7 @@ class LetterHistory extends Component
         /** @var Collection<int, array{id: int|string|null, code: string, name: string}> $branches */
         $branches = Cabang::getActiveBranches();
 
-        if ($this->isAdminCabang) {
-            $effectiveBranch = $this->adminBranchCode;
-            $branches = $branches->filter(function ($b) {
-                return (isset($b['code']) && strtoupper($b['code']) === strtoupper($this->adminBranchCode))
-                    || (isset($b['hr_code']) && strtoupper($b['hr_code']) === strtoupper($this->adminBranchHrCode));
-            });
-            if ($branches->isEmpty() && $this->adminBranchCode) {
-                $branches = collect([[
-                    'id' => null,
-                    'code' => $this->adminBranchCode,
-                    'name' => $this->adminBranchName ?: $this->adminBranchCode,
-                ]]);
-            }
-        } elseif ($this->isKaryawan) {
-            $effectiveBranch = $this->userBranch;
-        } else {
-            $effectiveBranch = $this->branch;
-        }
+        $effectiveBranch = $this->branch;
 
         $letters = Letter::query()
             ->whereNull('parent_id')

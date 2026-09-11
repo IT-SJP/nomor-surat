@@ -9,6 +9,21 @@
                 {{ $isAdminCabang ? 'Kelola data dan kode surat resmi untuk entitas cabang.' : 'Daftar data cabang dan kode surat resmi PT Selamat Jaya Persada Holding.' }}
             </p>
         </div>
+
+        @if($canManageBranches && ! $isAdminCabang)
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    wire:click="openAddModal"
+                    class="btn btn-primary btn-md rounded-xl text-white font-bold gap-2 shadow-md shadow-primary-600/20 text-xs sm:text-sm cursor-pointer"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Tambah Cabang Baru</span>
+                </button>
+            </div>
+        @endif
     </div>
 
     <!-- Branch Table Card -->
@@ -188,4 +203,113 @@
             <x-pagination-footer :items="$branches" label="cabang" />
         @endif
     </div>
+
+    <!-- Modal Tambah Cabang Baru -->
+    @if($showAddModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" wire:click="closeAddModal"></div>
+
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 text-left shadow-2xl border border-slate-200 dark:border-slate-800 transition-all sm:my-8 sm:w-full sm:max-w-lg p-6 sm:p-8 space-y-6">
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800/60 flex items-center justify-center font-bold">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-extrabold text-slate-900 dark:text-white" id="modal-title">Tambah Cabang / Entitas Baru</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Tambahkan cabang atau anak perusahaan baru ke sistem nomor surat</p>
+                            </div>
+                        </div>
+                        <button type="button" wire:click="closeAddModal" class="btn btn-ghost btn-sm btn-square rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                            ✕
+                        </button>
+                    </div>
+
+                    <form wire:submit="saveNewBranch" class="space-y-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                Nama Entitas / Cabang <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                wire:model="newBranchName"
+                                type="text"
+                                placeholder="Contoh: PT Cakrawala Muara Enim"
+                                class="input input-bordered w-full rounded-xl text-sm bg-slate-50/50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500"
+                                required
+                            />
+                            @error('newBranchName')
+                                <span class="text-red-500 text-xs font-semibold block mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                Kode Surat Resmi <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                wire:model="newBranchCode"
+                                type="text"
+                                placeholder="Contoh: CME"
+                                class="input input-bordered w-full rounded-xl text-sm font-mono font-bold uppercase bg-slate-50/50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500"
+                                required
+                            />
+                            <p class="text-[11px] text-slate-400 dark:text-slate-500">Digunakan pada format penomoran surat resmi (misal: 001/DIR/<strong>CKB</strong>/IX/2026).</p>
+                            @error('newBranchCode')
+                                <span class="text-red-500 text-xs font-semibold block mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                Kode Cabang Absen (HR Code) <span class="text-slate-400 font-normal">(Opsional)</span>
+                            </label>
+                            <input
+                                wire:model="newBranchHrCode"
+                                type="text"
+                                placeholder="Kosongkan jika belum ada di database Absen SJP"
+                                class="input input-bordered w-full rounded-xl text-sm font-mono bg-slate-50/50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500"
+                            />
+                            <p class="text-[11px] text-slate-400 dark:text-slate-500">Jika di masa depan cabang ini didaftarkan di Absen SJP, sistem akan otomatis menyinkronkannya.</p>
+                            @error('newBranchHrCode')
+                                <span class="text-red-500 text-xs font-semibold block mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="flex items-center gap-3 pt-2">
+                            <input
+                                wire:model="newBranchIsActive"
+                                id="newBranchIsActive"
+                                type="checkbox"
+                                class="checkbox checkbox-primary checkbox-sm rounded-md"
+                            />
+                            <label for="newBranchIsActive" class="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                                Status Aktif
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                                type="button"
+                                wire:click="closeAddModal"
+                                class="btn btn-ghost btn-sm rounded-xl text-slate-500 dark:text-slate-400 cursor-pointer"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                wire:loading.attr="disabled"
+                                class="btn btn-primary btn-sm rounded-xl text-white font-bold px-5 cursor-pointer shadow-md shadow-primary-600/20"
+                            >
+                                <span wire:loading.remove wire:target="saveNewBranch">Simpan Cabang</span>
+                                <span wire:loading wire:target="saveNewBranch" class="loading loading-spinner loading-xs"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

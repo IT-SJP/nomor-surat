@@ -15,11 +15,7 @@
                 Buat Nomor Surat Keluar
             </h1>
             <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-                @if($isKaryawan)
-                    Formulir penerbitan nomor surat resmi cabang <strong class="text-primary-600 dark:text-primary-400 font-bold">{{ $branch_name }}</strong>.
-                @else
-                    Penerbitan nomor surat keluar untuk seluruh entitas anak perusahaan SJP Holding.
-                @endif
+                Penerbitan nomor surat keluar resmi untuk seluruh entitas anak perusahaan SJP Holding.
             </p>
         </div>
     </div>
@@ -89,24 +85,14 @@
                         Cabang / Entitas Penerbit <span class="text-rose-500">*</span>
                     </label>
 
-                    @if($isKaryawan || $isAdminCabang)
-                        <!-- Karyawan & Admin Cabang Mode: Clean locked visual card -->
-                        <div class="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                            <div class="space-y-0.5">
-                                <h4 class="font-bold text-sm text-primary-600 dark:text-primary-400">{{ !empty($branch_code) ? "{$branch_code} — {$branch_name}" : $branch_name }}</h4>
-                            </div>
-                        </div>
-                    @else
-                        <!-- Admin Mode: Select branch -->
-                        <select wire:model.live="branch_code" class="select select-bordered w-full rounded-lg text-sm text-slate-700 dark:text-slate-200 font-semibold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500">
-                            @foreach($branches as $b)
-                                <option value="{{ $b['code'] }}">
-                                    {{ $b['code'] }} &mdash; {{ $b['name'] }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('branch_code') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
-                    @endif
+                    <select wire:model.live="branch_code" class="select select-bordered w-full rounded-lg text-sm text-slate-700 dark:text-slate-200 font-semibold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500">
+                        @foreach($branches as $b)
+                            <option value="{{ $b['code'] }}">
+                                {{ $b['code'] }} &mdash; {{ $b['name'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('branch_code') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Bulan & Tahun -->

@@ -148,12 +148,12 @@ class LetterRequestForm extends Component
                 }
             }
 
-            // Resolve branch_code from local Branch table using raw hr_code
+            // Resolve initial branch_code from local Branch table using raw hr_code (bebas diganti, tidak dikunci)
             $rawHrCode = (string) ($sso['raw_branch_code'] ?? $sso['branch_code'] ?? '');
             $localBranch = Branch::where('hr_code', $rawHrCode)->first();
             $this->branch_code = $localBranch?->branch_code ?? (string) ($sso['branch_code'] ?? '');
             $this->branch_name = $localBranch?->name ?? (string) ($sso['branch_name'] ?? "Cabang {$rawHrCode}");
-            $this->isBranchLocked = true;
+            $this->isBranchLocked = false;
 
             // Kunci input jika datanya didapat langsung dari profil karyawan, atau izinkan edit manual jika kosong
             $this->isEmailLocked = ! empty(trim($this->requestor_email));
@@ -161,7 +161,7 @@ class LetterRequestForm extends Component
             $this->isDepartmentLocked = ! empty(trim($this->requestor_department));
             $this->isPositionLocked = ! empty(trim($this->requestor_position));
         } elseif ($this->isAdminCabang) {
-            // Khusus Admin Cabang: Cabang langsung otomatis mengarah ke cabang admin tersebut dan terkunci
+            // Admin Cabang: Cabang default awal terarah ke cabangnya, namun bebas memilih cabang lain jika diperlukan
             $rawHrCode = $this->adminBranchHrCode;
             $localBranch = Branch::where('hr_code', $rawHrCode)->first();
             if (! $localBranch && ! empty($this->adminBranchCode)) {
@@ -170,9 +170,9 @@ class LetterRequestForm extends Component
 
             $this->branch_code = $localBranch?->branch_code ?? (string) ($sso['branch_code'] ?? '');
             $this->branch_name = $localBranch?->name ?? (string) ($sso['branch_name'] ?? "Cabang {$rawHrCode}");
-            $this->isBranchLocked = true;
+            $this->isBranchLocked = false;
 
-            // Karyawan yang muncul hanya dari cabang admin tersebut
+            // Karyawan yang muncul di autocomplete pencarian
             if ($karyawan_nik) {
                 $employees = Karyawan::searchEmployees($karyawan_nik, 1, $rawHrCode);
                 if ($employees->isNotEmpty()) {
@@ -196,6 +196,15 @@ class LetterRequestForm extends Component
                 }
             } else {
                 $this->employeeResults = Karyawan::searchEmployees('', 8)->toArray();
+            }
+        }
+
+        // Pastikan branch_code terisi ke salah satu cabang aktif jika saat mount masih kosong
+        if (empty($this->branch_code)) {
+            $activeBranches = Cabang::getActiveBranches();
+            if ($activeBranches->isNotEmpty()) {
+                $this->branch_code = $activeBranches->first()['code'] ?? '';
+                $this->branch_name = $activeBranches->first()['name'] ?? '';
             }
         }
     }
@@ -232,11 +241,7 @@ class LetterRequestForm extends Component
         $this->requestor_email = $employee['email'] ?? '';
         $this->requestor_phone = $employee['phone'] ?? '';
 
-        if (! empty($employee['branch_code']) && ! $this->isAdminCabang) {
-            $this->branch_code = $employee['branch_code'];
-            $this->branch_name = $employee['branch_name'];
-            $this->isBranchLocked = true;
-        }
+        // Catatan: Entitas/cabang penerbit tidak berubah mengikuti data pemohon (2 hal independen)
 
         $this->isEmailLocked = ! empty(trim($this->requestor_email));
         $this->isPhoneLocked = ! empty(trim($this->requestor_phone));
@@ -265,12 +270,6 @@ class LetterRequestForm extends Component
         $this->isPhoneLocked = false;
         $this->isDepartmentLocked = false;
         $this->isPositionLocked = false;
-
-        if (! $this->isAdminCabang) {
-            $this->isBranchLocked = false;
-        } else {
-            $this->isBranchLocked = true;
-        }
     }
 
     public function incrementSubCount(): void
@@ -289,10 +288,6 @@ class LetterRequestForm extends Component
 
     public function updatedBranchCode(string $code): void
     {
-        if ($this->isKaryawan || $this->isAdminCabang) {
-            return;
-        }
-
         $branches = Cabang::getActiveBranches();
         $matched = $branches->firstWhere('code', $code);
         if ($matched) {
@@ -408,13 +403,6 @@ class LetterRequestForm extends Component
     {
         /** @var Collection<int, array{id: int|string|null, code: string, name: string}> $branches */
         $branches = Cabang::getActiveBranches();
-
-        if ($this->isAdminCabang && ! empty($this->adminBranchHrCode)) {
-            $branches = $branches->filter(function ($b) {
-                return ($b['code'] ?? '') === $this->branch_code
-                    || ($b['id'] ?? '') === $this->adminBranchHrCode;
-            });
-        }
 
         $previewNumber = $this->branch_code && $this->month && $this->year
             ? $service->previewNextNumber($this->branch_code, $this->month, $this->year, $this->target_code)
