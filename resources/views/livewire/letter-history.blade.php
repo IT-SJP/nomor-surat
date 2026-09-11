@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <!-- Header & Action Row -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Riwayat Nomor Surat
@@ -276,7 +276,7 @@
                                     <button
                                         type="button"
                                         wire:click="viewLetter({{ $letter->id }})"
-                                        class="btn btn-square btn-primary btn-soft dark:bg-primary-950/50 dark:text-primary-300 dark:hover:bg-primary-900/60 btn-sm rounded-md cursor-pointer"
+                                        class="btn btn-square btn-primary btn-soft dark:bg-primary-950/50 dark:text-primary-300 dark:hover:bg-primary-900/60 dark:hover:text-white btn-sm rounded-lg cursor-pointer"
                                         title="Lihat Detail Surat"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,7 +302,7 @@
                                                     }
                                                 });
                                             "
-                                            class="btn btn-square btn-ghost btn-sm rounded-md text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                            class="btn btn-square btn-error btn-soft dark:bg-red-950/50 dark:text-red-300 dark:hover:bg-red-900/60 dark:hover:text-white btn-sm rounded-lg cursor-pointer"
                                             title="Batalkan / Hapus Nomor Surat"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,7 +337,7 @@
 
     <!-- Detail Modal -->
     <div class="modal {{ $showDetailModal ? 'modal-open' : '' }} z-[100] backdrop-blur-md bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
-        <div class="modal-box max-w-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900" x-data="{ copiedDetail: false, copiedSubId: null, copiedAllSubs: false }">
+        <div class="modal-box max-w-xl max-h-[calc(100dvh-2.5rem)] overflow-y-auto rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900" x-data="{ copiedDetail: false, copiedSubId: null, copiedAllSubs: false }">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <h3 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
@@ -540,7 +540,7 @@
                                                             }
                                                         });
                                                     "
-                                                    class="btn btn-ghost btn-xs btn-square text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors p-1"
+                                                    class="btn btn-square btn-error btn-soft dark:bg-red-950/50 dark:text-red-300 dark:hover:bg-red-900/60 dark:hover:text-white btn-xs rounded-md cursor-pointer"
                                                     title="Batalkan / Hapus Sub-Nomor Terakhir Ini"
                                                 >
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -553,7 +553,7 @@
                                 @endforeach
                             </div>
                         @else
-                            <div class="py-4 text-center rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-dashed border-slate-200 dark:border-slate-800">
+                            <div class="py-4 text-center rounded-xl bg-slate-50/50 dark:bg-slate-800/30 border border-dashed border-slate-200 dark:border-slate-800">
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Belum ada sub-nomor untuk surat induk ini.</p>
                             </div>
                         @endif
@@ -561,7 +561,7 @@
                 @endif
 
                 <!-- Action Buttons di paling bawah modal -->
-                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center gap-2.5">
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col-reverse sm:flex-row items-center gap-2.5">
                     @if(! $this->isLetterMasked($selectedLetter))
                         <button
                             type="button"
@@ -591,7 +591,7 @@
                             type="button"
                             wire:click="addSubLetter"
                             wire:loading.attr="disabled"
-                            class="btn btn-primary flex-1 w-full text-white font-extrabold rounded-xl shadow-md shadow-primary-600/20 py-3 h-auto transition-all cursor-pointer flex items-center justify-center gap-2"
+                            class="btn btn-primary w-full sm:flex-1 text-white font-extrabold rounded-xl shadow-md shadow-primary-600/20 py-3 h-auto transition-all cursor-pointer flex items-center justify-center gap-2"
                         >
                             <span wire:loading.remove wire:target="addSubLetter" class="flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -624,7 +624,7 @@
     {{-- Modal Import CSV (Admin Only) --}}
     @if($isAdmin)
         <div class="modal {{ $showImportModal ? 'modal-open' : '' }} backdrop-blur-xs bg-slate-900/40" role="dialog">
-            <div class="modal-box bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg shadow-2xl transition-all">
+            <div class="modal-box bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg max-h-[calc(100dvh-2.5rem)] overflow-y-auto shadow-2xl transition-all">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                     <div class="flex items-center gap-2.5">
                         <div>

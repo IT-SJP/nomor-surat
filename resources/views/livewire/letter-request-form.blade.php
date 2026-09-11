@@ -9,7 +9,7 @@
     }
 }">
     <!-- Top Header & Breadcrumbs -->
-    <div class="flex flex-col sm:flex-row sm:items-center gap-4 pb-1">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Buat Nomor Surat Keluar
@@ -355,7 +355,7 @@
                             <button
                                 type="button"
                                 wire:click="clearSelectedEmployee"
-                                class="btn btn-sm btn-ghost btn-square rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
+                                class="btn btn-square btn-error btn-soft dark:bg-red-950/50 dark:text-red-300 dark:hover:bg-red-900/60 dark:hover:text-white btn-sm rounded-lg cursor-pointer"
                                 title="Hapus Pilihan"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -540,12 +540,12 @@
 
     <!-- Success Modal Popup -->
     <div class="modal {{ $showSuccessModal ? 'modal-open' : '' }} z-[100] backdrop-blur-md bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
-        <div class="modal-box max-w-lg rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 text-center space-y-5 shadow-2xl bg-white dark:bg-slate-900 relative">
+        <div class="modal-box max-w-lg max-h-[calc(100dvh-2.5rem)] overflow-y-auto rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 text-center space-y-5 shadow-2xl bg-white dark:bg-slate-900 relative">
             <!-- Close Button Corner -->
             <button
                 type="button"
                 wire:click="closeSuccessModal"
-                class="btn btn-sm sm:btn-md btn-circle btn-ghost absolute right-3.5 top-3.5 sm:right-4 sm:top-4 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                class="btn btn-sm btn-square btn-ghost rounded-lg absolute right-3.5 top-3.5 sm:right-4 sm:top-4 text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors cursor-pointer"
                 title="Tutup Modal"
                 aria-label="Tutup"
             >
@@ -613,7 +613,7 @@
                 <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                     <button
                         type="button"
-                        class="btn btn-primary text-white font-extrabold rounded-xl gap-2 flex-1 h-12 text-sm sm:text-base shadow-md shadow-primary-600/25 cursor-pointer active:scale-[0.98] transition-all"
+                        class="btn btn-primary text-white font-extrabold rounded-lg gap-2 w-full sm:flex-1 py-3 h-auto min-h-[48px] text-sm shadow-md shadow-primary-600/25 cursor-pointer active:scale-[0.98] transition-all flex items-center justify-center"
                         @click="window.copyToClipboard('{{ $createdLetter->reference_number }}', 'Nomor Surat'); copiedSuccess = true; setTimeout(() => copiedSuccess = false, 3000)"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -622,7 +622,7 @@
                         <span x-text="copiedSuccess ? '✓ Nomor Tersalin!' : 'Salin Nomor Surat'">Salin Nomor Surat</span>
                     </button>
 
-                    <a href="{{ route('letter.history', ['open' => $createdLetter->id]) }}" wire:navigate class="btn btn-outline border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex-1 h-12 text-sm sm:text-base shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <a href="{{ route('letter.history', ['open' => $createdLetter->id]) }}" wire:navigate class="btn btn-outline border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg w-full sm:flex-1 py-3 h-auto min-h-[48px] text-sm shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -632,7 +632,7 @@
             @endif
 
             <div class="modal-action justify-center pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button type="button" wire:click="createAnother" class="btn btn-ghost btn-sm sm:btn-md text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl px-4 cursor-pointer">
+                <button type="button" wire:click="createAnother" class="btn btn-ghost btn-sm text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg px-4 cursor-pointer">
                     + Buat Nomor Surat Lainnya
                 </button>
             </div>
