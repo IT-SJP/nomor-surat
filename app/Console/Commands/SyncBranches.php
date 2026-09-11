@@ -28,6 +28,33 @@ class SyncBranches extends Command
                 // Match primarily by HRIS unique branch code (hr_code)
                 $branch = Branch::where('hr_code', $cabang->kode_cabang)->first();
 
+                // If not matched by hr_code, check if there is an existing manual branch matching branch_code or name with empty/null hr_code
+                if (! $branch) {
+                    $branch = Branch::where(function ($q) {
+                        $q->whereNull('hr_code')->orWhere('hr_code', '');
+                    })
+                        ->where(function ($q) use ($cabang) {
+                            $q->where('branch_code', $cabang->kode_cabang)
+                                ->orWhere('name', 'ILIKE', $cabang->nama_cabang);
+                        })
+                        ->first();
+
+                    if ($branch) {
+                        $branch->hr_code = $cabang->kode_cabang;
+                        if ($branch->name !== $cabang->nama_cabang) {
+                            $branch->name = $cabang->nama_cabang;
+                        }
+                        if (isset($cabang->status)) {
+                            $branch->is_active = (bool) $cabang->status;
+                        }
+                        $branch->save();
+                        $updatedCount++;
+                        $this->line("- Unified manual branch {$branch->name} with HRIS code: {$cabang->kode_cabang}");
+
+                        continue;
+                    }
+                }
+
                 if (! $branch) {
                     // Automatically add new branch from HRIS with empty/null branch_code
                     $branch = Branch::create([

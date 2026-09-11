@@ -9,6 +9,21 @@
                 {{ $isAdminCabang ? 'Kelola data dan kode surat resmi untuk entitas cabang.' : 'Daftar data cabang dan kode surat resmi PT Selamat Jaya Persada Holding.' }}
             </p>
         </div>
+
+        @if($canManageBranches && ! $isAdminCabang)
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    wire:click="openAddModal"
+                    class="btn btn-primary btn-md rounded-lg text-white font-bold gap-2 shadow-md shadow-primary-600/20 text-xs sm:text-sm cursor-pointer"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Tambah Cabang Baru</span>
+                </button>
+            </div>
+        @endif
     </div>
 
     <!-- Branch Table Card -->
@@ -146,27 +161,29 @@
                             </td>
                             @if($canManageBranches)
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <button type="button" 
-                                        @click.prevent="
-                                            window.confirmAction({
-                                                title: 'Hapus Cabang?',
-                                                text: 'Hapus cabang {{ addslashes($branch->name) }} dari sistem nomor surat?',
-                                                icon: 'warning',
-                                                confirmButtonText: 'Ya, Hapus',
-                                                cancelButtonText: 'Batal',
-                                                confirmButtonColor: '#dc2626'
-                                            }).then((res) => {
-                                                if (res.isConfirmed) {
-                                                    $wire.deleteBranch({{ $branch->id }});
-                                                }
-                                            });
-                                        "
-                                        class="btn btn-ghost btn-sm btn-square rounded-md text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                                        title="Hapus Cabang dari Nomor Surat">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <button type="button" 
+                                            @click.prevent="
+                                                window.confirmAction({
+                                                    title: 'Hapus Cabang?',
+                                                    text: 'Hapus cabang {{ addslashes($branch->name) }} dari sistem nomor surat?',
+                                                    icon: 'warning',
+                                                    confirmButtonText: 'Ya, Hapus',
+                                                    cancelButtonText: 'Batal',
+                                                    confirmButtonColor: '#dc2626'
+                                                }).then((res) => {
+                                                    if (res.isConfirmed) {
+                                                        $wire.deleteBranch({{ $branch->id }});
+                                                    }
+                                                });
+                                            "
+                                            class="btn btn-square btn-error btn-soft dark:bg-red-950/50 dark:text-red-300 dark:hover:bg-red-900/60 dark:hover:text-white btn-sm rounded-lg cursor-pointer"
+                                            title="Hapus Cabang dari Nomor Surat">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
@@ -187,5 +204,111 @@
         @if($branches->total() > 0)
             <x-pagination-footer :items="$branches" label="cabang" />
         @endif
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CREATE MODAL (Tambah Cabang Baru)         -->
+    <!-- ========================================== -->
+    <div class="modal {{ $showAddModal ? 'modal-open' : '' }} z-[100] backdrop-blur-sm bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
+        <div class="modal-box max-w-lg max-h-[calc(100dvh-2.5rem)] overflow-y-auto rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900 relative">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Tambah Cabang / Entitas Baru</h3>
+                </div>
+                <button
+                    type="button"
+                    wire:click="closeAddModal"
+                    class="btn btn-ghost btn-sm btn-square rounded-md text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors cursor-pointer"
+                    title="Tutup Modal"
+                    aria-label="Tutup"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form wire:submit="saveNewBranch" class="space-y-4">
+                <!-- Nama Entitas / Cabang -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        Nama Entitas / Cabang <span class="text-rose-500">*</span>
+                    </label>
+                    <input
+                        wire:model="newBranchName"
+                        type="text"
+                        placeholder="Contoh: PT Cakrawala Muara Enim"
+                        class="input input-bordered w-full rounded-xl text-sm focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        required
+                    />
+                    @error('newBranchName') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
+                </div>
+
+                <!-- Kode Surat Resmi -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        Kode Surat Resmi <span class="text-rose-500">*</span>
+                    </label>
+                    <input
+                        wire:model="newBranchCode"
+                        type="text"
+                        placeholder="Contoh: CME"
+                        class="input input-bordered w-full rounded-xl text-sm font-mono font-bold uppercase focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        required
+                    />
+                    <span class="text-[11px] text-slate-400 dark:text-slate-500 block">Digunakan pada format penomoran surat resmi: 001/DIR/<strong>[KODE]</strong>/IX/2026</span>
+                    @error('newBranchCode') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
+                </div>
+
+                <!-- Kode Cabang Absen (HR Code) -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        Kode Cabang Absen (HR Code) <span class="text-slate-400 dark:text-slate-500 font-normal lowercase">(opsional)</span>
+                    </label>
+                    <input
+                        wire:model="newBranchHrCode"
+                        type="text"
+                        placeholder="Kosongkan jika belum ada di database Absen SJP"
+                        class="input input-bordered w-full rounded-xl text-sm font-mono focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    />
+                    <span class="text-[11px] text-slate-400 dark:text-slate-500 block">Jika di masa depan cabang ini didaftarkan di Absen SJP, sistem akan otomatis menyinkronkannya.</span>
+                    @error('newBranchHrCode') <span class="text-rose-600 text-xs block font-semibold mt-1">{{ $message }}</span> @enderror
+                </div>
+
+                <!-- Status Aktif -->
+                <div class="pt-1">
+                    <label class="cursor-pointer label justify-start gap-3 py-0">
+                        <input
+                            wire:model="newBranchIsActive"
+                            type="checkbox"
+                            class="toggle toggle-primary toggle-sm cursor-pointer"
+                        />
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Status Cabang</span>
+                    </label>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                        type="button"
+                        wire:click="closeAddModal"
+                        class="btn btn-ghost btn-sm rounded-md text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        class="btn btn-primary btn-sm rounded-md text-white font-bold text-xs px-4 cursor-pointer shadow-sm shadow-primary-600/20"
+                        wire:loading.attr="disabled"
+                    >
+                        <span wire:loading.remove wire:target="saveNewBranch">Simpan Cabang</span>
+                        <span wire:loading wire:target="saveNewBranch" class="loading loading-spinner loading-xs"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-backdrop bg-transparent" wire:click="closeAddModal">
+            <button class="cursor-default">close</button>
+        </div>
     </div>
 </div>

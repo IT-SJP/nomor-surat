@@ -1,18 +1,12 @@
 <div class="space-y-6">
     <!-- Header & Action Row -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {{ $isKaryawan ? "Riwayat Nomor Surat ({$userBranch})" : 'Riwayat Seluruh Nomor Surat' }}
+                Riwayat Nomor Surat
             </h1>
             <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                @if($isAdminCabang)
-                    Daftar riwayat nomor surat resmi khusus cabang {{ $adminBranchCode ? "{$adminBranchName}" : $adminBranchName }}.
-                @elseif($isKaryawan)
-                    Daftar riwayat nomor surat yang telah diterbitkan untuk cabang {{ $userBranchName }}.
-                @else
-                    Kelola dan pantau seluruh riwayat nomor surat yang telah diterbitkan pada holding SJP.
-                @endif
+                Daftar riwayat nomor surat resmi yang telah diterbitkan pada holding PT Selamat Jaya Persada.
             </p>
         </div>
 
@@ -47,12 +41,12 @@
     <!-- Filter & Search Card (Collapsible Accordion on Mobile) -->
     <div 
         x-data="{ 
-            isOpen: {{ ($date || ($isAdmin && ! $isAdminCabang && $branch)) ? 'true' : 'false' }},
+            isOpen: {{ ($date || $branch) ? 'true' : 'false' }},
             activeCount: 0,
             updateCount() {
                 let count = 0;
                 if ($wire.date) count++;
-                if ({{ ($isAdmin && ! $isAdminCabang) ? 'true' : 'false' }} && $wire.branch) count++;
+                if ($wire.branch) count++;
                 this.activeCount = count;
             }
         }"
@@ -172,22 +166,16 @@
                 class="order-3 lg:order-2 lg:col-span-3 space-y-1 transition-all"
             >
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Cabang</label>
-                @if($isKaryawan || $isAdminCabang)
-                    <div class="input input-bordered w-full flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 text-xs font-bold text-primary-600 dark:text-primary-400 rounded-lg cursor-not-allowed border-slate-200 dark:border-slate-700">
-                        <span class="truncate">{{ $isAdminCabang ? ($adminBranchCode ? "{$adminBranchCode} — {$adminBranchName}" : $adminBranchName) : "{$userBranch} — {$userBranchName}" }}</span>
-                    </div>
-                @else
-                    <select wire:model.live="branch" class="select select-bordered w-full rounded-lg text-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500">
-                        <option value="">Semua Cabang SJP Holding</option>
-                        @foreach($branches as $b)
-                            <option value="{{ $b['code'] }}">{{ $b['code'] }} &mdash; {{ $b['name'] }}</option>
-                        @endforeach
-                    </select>
-                @endif
+                <select wire:model.live="branch" class="select select-bordered w-full rounded-lg text-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-primary-500">
+                    <option value="">Semua Cabang SJP Holding</option>
+                    @foreach($branches as $b)
+                        <option value="{{ $b['code'] }}">{{ $b['code'] }} &mdash; {{ $b['name'] }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 
-        @if($search || ($isAdmin && ! $isAdminCabang && $branch) || $date)
+        @if($search || $branch || $date)
             <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span class="badge badge-primary badge-xs rounded-full"></span>
@@ -258,13 +246,24 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 max-w-xs">
-                                <p class="font-bold text-slate-900 dark:text-white line-clamp-1 text-xs sm:text-sm">{{ $letter->subject }}</p>
-                                @if($letter->purpose)
-                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">{{ $letter->purpose }}</p>
+                                @if($this->isLetterMasked($letter))
+                                    <div class="flex items-center gap-1.5" title="Disamarkan untuk menjaga kerahasiaan dokumen">
+                                        <span class="font-mono text-slate-400 dark:text-slate-500 tracking-widest text-xs select-none">••••••••••••</span>
+                                        <span class="badge badge-ghost badge-xs text-[10px] text-slate-400 font-normal">Rahasia</span>
+                                    </div>
+                                @else
+                                    <p class="font-bold text-slate-900 dark:text-white line-clamp-1 text-xs sm:text-sm">{{ $letter->subject }}</p>
+                                    @if($letter->purpose)
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">{{ $letter->purpose }}</p>
+                                    @endif
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $letter->target_code }}</span>
+                                @if($this->isLetterMasked($letter))
+                                    <span class="font-mono text-slate-400 dark:text-slate-500 tracking-wider text-xs select-none" title="Disamarkan untuk menjaga kerahasiaan dokumen">••••••••</span>
+                                @else
+                                    <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $letter->target_code }}</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <p class="font-bold text-slate-900 dark:text-white leading-tight text-xs sm:text-sm">{{ $letter->requestor_name }}</p>
@@ -277,7 +276,7 @@
                                     <button
                                         type="button"
                                         wire:click="viewLetter({{ $letter->id }})"
-                                        class="btn btn-square btn-primary btn-soft dark:bg-primary-950/50 dark:text-primary-300 dark:hover:bg-primary-900/60 btn-sm rounded-md cursor-pointer"
+                                        class="btn btn-square btn-primary btn-soft dark:bg-primary-950/50 dark:text-primary-300 dark:hover:bg-primary-900/60 dark:hover:text-white btn-sm rounded-lg cursor-pointer"
                                         title="Lihat Detail Surat"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,29 +285,31 @@
                                         </svg>
                                     </button>
 
-                                    <button
-                                        type="button"
-                                        @click="
-                                            window.confirmAction({
-                                                title: 'Batalkan Nomor Surat?',
-                                                text: 'Apakah Anda yakin ingin membatalkan nomor surat {{ $letter->reference_number }}{{ $letter->subLetters->isNotEmpty() ? ' beserta ' . $letter->subLetters->count() . ' sub-nomornya' : '' }}? Tindakan ini akan menghapus nomor surat secara permanen.',
-                                                icon: 'warning',
-                                                confirmButtonText: 'Ya, Batalkan',
-                                                cancelButtonText: 'Tutup',
-                                                confirmButtonColor: '#dc2626'
-                                            }).then((res) => {
-                                                if (res.isConfirmed) {
-                                                    $wire.deleteLetter({{ $letter->id }});
-                                                }
-                                            });
-                                        "
-                                        class="btn btn-square btn-ghost btn-sm rounded-md text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                                        title="Batalkan / Hapus Nomor Surat"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
+                                    @if(! $this->isLetterMasked($letter))
+                                        <button
+                                            type="button"
+                                            @click="
+                                                window.confirmAction({
+                                                    title: 'Batalkan Nomor Surat?',
+                                                    text: 'Apakah Anda yakin ingin membatalkan nomor surat {{ $letter->reference_number }}{{ $letter->subLetters->isNotEmpty() ? ' beserta ' . $letter->subLetters->count() . ' sub-nomornya' : '' }}? Tindakan ini akan menghapus nomor surat secara permanen.',
+                                                    icon: 'warning',
+                                                    confirmButtonText: 'Ya, Batalkan',
+                                                    cancelButtonText: 'Tutup',
+                                                    confirmButtonColor: '#dc2626'
+                                                }).then((res) => {
+                                                    if (res.isConfirmed) {
+                                                        $wire.deleteLetter({{ $letter->id }});
+                                                    }
+                                                });
+                                            "
+                                            class="btn btn-square btn-error btn-soft dark:bg-red-950/50 dark:text-red-300 dark:hover:bg-red-900/60 dark:hover:text-white btn-sm rounded-lg cursor-pointer"
+                                            title="Batalkan / Hapus Nomor Surat"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -336,7 +337,7 @@
 
     <!-- Detail Modal -->
     <div class="modal {{ $showDetailModal ? 'modal-open' : '' }} z-[100] backdrop-blur-md bg-slate-900/40 dark:bg-slate-950/60" role="dialog">
-        <div class="modal-box max-w-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900" x-data="{ copiedDetail: false, copiedSubId: null, copiedAllSubs: false }">
+        <div class="modal-box max-w-xl max-h-[calc(100dvh-2.5rem)] overflow-y-auto rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl bg-white dark:bg-slate-900" x-data="{ copiedDetail: false, copiedSubId: null, copiedAllSubs: false }">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <h3 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
@@ -363,7 +364,9 @@
                                 {{ $selectedLetter->parent?->reference_number ?? '-' }}
                             </p>
                             @if($selectedLetter->parent)
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-xs">{{ $selectedLetter->parent->subject }}</p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-xs">
+                                    {{ $this->isLetterMasked($selectedLetter->parent) ? '••••••••••••' : $selectedLetter->parent->subject }}
+                                </p>
                             @endif
                         </div>
                         @if($selectedLetter->parent_id)
@@ -401,15 +404,27 @@
                     </div>
                     <div class="bg-slate-50/60 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                         <p class="text-slate-400 dark:text-slate-500 font-semibold text-[10px] uppercase">Tujuan / Instansi</p>
-                        <p class="font-bold mt-0.5 text-slate-900 dark:text-white">{{ $selectedLetter->target_code }}</p>
+                        @if($this->isLetterMasked($selectedLetter))
+                            <p class="font-mono text-slate-400 dark:text-slate-500 tracking-wider mt-0.5 select-none text-xs">•••••••• <span class="text-[10px] font-sans font-normal">(Disamarkan)</span></p>
+                        @else
+                            <p class="font-bold mt-0.5 text-slate-900 dark:text-white">{{ $selectedLetter->target_code }}</p>
+                        @endif
                     </div>
                     <div class="bg-slate-50/60 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 sm:col-span-2">
                         <p class="text-slate-400 dark:text-slate-500 font-semibold text-[10px] uppercase">Perihal Surat</p>
-                        <p class="font-bold mt-0.5 text-sm text-slate-900 dark:text-white">{{ $selectedLetter->subject }}</p>
+                        @if($this->isLetterMasked($selectedLetter))
+                            <p class="font-mono text-slate-400 dark:text-slate-500 tracking-widest mt-0.5 select-none text-xs">•••••••••••• <span class="text-[10px] font-sans font-normal">(Disamarkan demi kerahasiaan)</span></p>
+                        @else
+                            <p class="font-bold mt-0.5 text-sm text-slate-900 dark:text-white">{{ $selectedLetter->subject }}</p>
+                        @endif
                     </div>
                     <div class="bg-slate-50/60 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 sm:col-span-2">
                         <p class="text-slate-400 dark:text-slate-500 font-semibold text-[10px] uppercase">Keperluan / Keterangan</p>
-                        <p class="mt-0.5 text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{{ $selectedLetter->purpose ?: '-' }}</p>
+                        @if($this->isLetterMasked($selectedLetter))
+                            <p class="font-mono text-slate-400 dark:text-slate-500 tracking-widest mt-0.5 select-none text-xs">•••••••••••• <span class="text-[10px] font-sans font-normal">(Disamarkan demi kerahasiaan)</span></p>
+                        @else
+                            <p class="mt-0.5 text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{{ $selectedLetter->purpose ?: '-' }}</p>
+                        @endif
                     </div>
                     <div class="bg-slate-50/60 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                         <p class="text-slate-400 dark:text-slate-500 font-semibold text-[10px] uppercase">Pemohon (Karyawan)</p>
@@ -508,7 +523,7 @@
                                                 <span class="hidden sm:inline font-medium">Salin</span>
                                             </span>
 
-                                            @if($sub->sub_number === $maxSubNumber)
+                                            @if($sub->sub_number === $maxSubNumber && ! $this->isLetterMasked($selectedLetter))
                                                 <button
                                                     type="button"
                                                     @click.stop="
@@ -525,7 +540,7 @@
                                                             }
                                                         });
                                                     "
-                                                    class="btn btn-ghost btn-xs btn-square text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors p-1"
+                                                    class="btn btn-square btn-error btn-soft dark:bg-red-950/50 dark:text-red-300 dark:hover:bg-red-900/60 dark:hover:text-white btn-xs rounded-md cursor-pointer"
                                                     title="Batalkan / Hapus Sub-Nomor Terakhir Ini"
                                                 >
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -538,7 +553,7 @@
                                 @endforeach
                             </div>
                         @else
-                            <div class="py-4 text-center rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-dashed border-slate-200 dark:border-slate-800">
+                            <div class="py-4 text-center rounded-xl bg-slate-50/50 dark:bg-slate-800/30 border border-dashed border-slate-200 dark:border-slate-800">
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Belum ada sub-nomor untuk surat induk ini.</p>
                             </div>
                         @endif
@@ -546,48 +561,58 @@
                 @endif
 
                 <!-- Action Buttons di paling bawah modal -->
-                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center gap-2.5">
-                    <button
-                        type="button"
-                        @click="
-                            window.confirmAction({
-                                title: 'Batalkan Nomor Surat?',
-                                text: 'Apakah Anda yakin ingin membatalkan nomor surat {{ $selectedLetter->reference_number }}{{ $selectedLetter->subLetters->isNotEmpty() ? ' beserta seluruh (' . $selectedLetter->subLetters->count() . ') sub-nomornya' : '' }}? Data akan dihapus secara permanen.',
-                                icon: 'warning',
-                                confirmButtonText: 'Ya, Batalkan Surat',
-                                cancelButtonText: 'Tutup',
-                                confirmButtonColor: '#dc2626'
-                            }).then((res) => {
-                                if (res.isConfirmed) {
-                                    $wire.deleteLetter({{ $selectedLetter->id }});
-                                }
-                            });
-                        "
-                        class="btn btn-ghost text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl font-bold py-3 h-auto transition-all cursor-pointer w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs sm:text-sm"
-                        title="Batalkan nomor surat ini"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        <span>Batalkan Surat</span>
-                    </button>
-                    <button
-                        type="button"
-                        wire:click="addSubLetter"
-                        wire:loading.attr="disabled"
-                        class="btn btn-primary flex-1 w-full text-white font-extrabold rounded-xl shadow-md shadow-primary-600/20 py-3 h-auto transition-all cursor-pointer flex items-center justify-center gap-2"
-                    >
-                        <span wire:loading.remove wire:target="addSubLetter" class="flex items-center justify-center gap-2">
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col-reverse sm:flex-row items-center gap-2.5">
+                    @if(! $this->isLetterMasked($selectedLetter))
+                        <button
+                            type="button"
+                            @click="
+                                window.confirmAction({
+                                    title: 'Batalkan Nomor Surat?',
+                                    text: 'Apakah Anda yakin ingin membatalkan nomor surat {{ $selectedLetter->reference_number }}{{ $selectedLetter->subLetters->isNotEmpty() ? ' beserta seluruh (' . $selectedLetter->subLetters->count() . ') sub-nomornya' : '' }}? Data akan dihapus secara permanen.',
+                                    icon: 'warning',
+                                    confirmButtonText: 'Ya, Batalkan Surat',
+                                    cancelButtonText: 'Tutup',
+                                    confirmButtonColor: '#dc2626'
+                                }).then((res) => {
+                                    if (res.isConfirmed) {
+                                        $wire.deleteLetter({{ $selectedLetter->id }});
+                                    }
+                                });
+                            "
+                            class="btn btn-ghost text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl font-bold py-3 h-auto transition-all cursor-pointer w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs sm:text-sm"
+                            title="Batalkan nomor surat ini"
+                        >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            <span>Tambah Sub-Nomor Surat</span>
-                        </span>
-                        <span wire:loading wire:target="addSubLetter" class="flex items-center justify-center gap-2">
-                            <span class="loading loading-spinner loading-xs"></span>
-                            <span>Menerbitkan Sub-Nomor...</span>
-                        </span>
-                    </button>
+                            <span>Batalkan Surat</span>
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="addSubLetter"
+                            wire:loading.attr="disabled"
+                            class="btn btn-primary w-full sm:flex-1 text-white font-extrabold rounded-xl shadow-md shadow-primary-600/20 py-3 h-auto transition-all cursor-pointer flex items-center justify-center gap-2"
+                        >
+                            <span wire:loading.remove wire:target="addSubLetter" class="flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>Tambah Sub-Nomor Surat</span>
+                            </span>
+                            <span wire:loading wire:target="addSubLetter" class="flex items-center justify-center gap-2">
+                                <span class="loading loading-spinner loading-xs"></span>
+                                <span>Menerbitkan Sub-Nomor...</span>
+                            </span>
+                        </button>
+                    @else
+                        <button
+                            type="button"
+                            wire:click="closeDetailModal"
+                            class="btn btn-outline btn-neutral w-full rounded-xl font-bold py-2.5 h-auto transition-all cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm"
+                        >
+                            Tutup
+                        </button>
+                    @endif
                 </div>
             @endif
         </div>
@@ -599,7 +624,7 @@
     {{-- Modal Import CSV (Admin Only) --}}
     @if($isAdmin)
         <div class="modal {{ $showImportModal ? 'modal-open' : '' }} backdrop-blur-xs bg-slate-900/40" role="dialog">
-            <div class="modal-box bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg shadow-2xl transition-all">
+            <div class="modal-box bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg max-h-[calc(100dvh-2.5rem)] overflow-y-auto shadow-2xl transition-all">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                     <div class="flex items-center gap-2.5">
                         <div>

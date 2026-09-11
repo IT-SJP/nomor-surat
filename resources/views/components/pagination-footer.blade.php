@@ -12,7 +12,7 @@
             <div class="relative">
                 <select 
                     wire:model.live="perPage"
-                    class="select select-bordered select-sm rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:border-primary-500 focus:outline-none cursor-pointer">
+                    class="select select-bordered select-sm rounded-md text-xs font-semibold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:border-primary-500 focus:outline-none cursor-pointer">
                     @foreach ($options as $option)
                         <option value="{{ $option }}">{{ $option }}</option>
                     @endforeach
