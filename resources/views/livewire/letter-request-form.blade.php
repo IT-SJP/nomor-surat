@@ -339,7 +339,7 @@
 
                     @if($selectedEmployee)
                         <!-- Selected Employee Card (Select2 Selected State) -->
-                        <div class="flex items-center justify-between p-3.5 rounded-2xl border border-primary-200 dark:border-primary-800/60 bg-primary-50/60 dark:bg-primary-950/40 transition-all shadow-2xs">
+                        <div class="flex items-center justify-between p-3.5 rounded-lg border border-primary-200 dark:border-primary-800/60 bg-primary-50/60 dark:bg-primary-950/40 transition-all shadow-2xs">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0">
                                     {{ strtoupper(substr($selectedEmployee['name'], 0, 2)) }}
@@ -378,7 +378,7 @@
                                     @click="open = true"
                                     type="text"
                                     placeholder="Ketik nama karyawan..."
-                                    class="input input-bordered w-full rounded-xl text-sm pl-10 pr-16 focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-2xs"
+                                    class="input input-bordered w-full rounded-lg text-sm pl-10 pr-16 focus:border-primary-500 bg-slate-50/80 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-2xs"
                                     autocomplete="off"
                                 />
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-1.5">
