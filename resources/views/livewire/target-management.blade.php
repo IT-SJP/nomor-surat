@@ -29,7 +29,7 @@
         <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="space-y-1.5 max-w-2xl">
                 <div class="flex items-center gap-2">
-                    <span class="badge badge-emerald badge-sm font-mono font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Pedoman Format Nomor Surat</span>
+                    <span class="badge badge-emerald badge-sm rounded-md font-mono font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Pedoman Format Nomor Surat</span>
                 </div>
                 <h3 class="text-sm sm:text-base font-extrabold text-white">
                     Format: <span class="text-emerald-300 font-mono">[No]/[Tujuan]/[Cabang]/[Bulan]/[Tahun]</span>
